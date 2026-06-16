@@ -59,6 +59,8 @@ export interface Enemy {
   intentSource: MoveSource
   targetSeat: number
   lastMove: IntentType | null
+  // Set to the move's true source once the player accuses it (else null).
+  revealed: MoveSource | null
 }
 
 export type Phase = 'player' | 'win' | 'lose'
@@ -72,10 +74,14 @@ export interface GameState {
   log: string[]
   // True while the Machine's next intent is being decided (async Gemini call).
   awaitingIntents: boolean
+  // Turing-test guess-check: one accusation per round + a running read tally.
+  calledThisRound: boolean
+  reads: { caught: number; falseAccusations: number }
 }
 
 export type Action =
   | { type: 'PLAY_CARD'; seat: number; uid: number; targetEnemy?: number }
   | { type: 'END_TURN'; seat: number }
   | { type: 'SET_INTENTS'; intents: { intent: Intent; source: MoveSource }[] }
+  | { type: 'ACCUSE'; enemy: number }
   | { type: 'RESTART' }

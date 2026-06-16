@@ -81,6 +81,7 @@ function makeEnemy(i: number, seatCount: number): Enemy {
     intentSource: move.source,
     targetSeat: i % Math.max(1, seatCount),
     lastMove: null,
+    revealed: null,
   }
 }
 
@@ -98,6 +99,8 @@ export function createInitialState(playerCount = 1, enemyCount = 1): GameState {
     phase: 'player',
     log: ['A new trial begins.'],
     awaitingIntents: true,
+    calledThisRound: false,
+    reads: { caught: 0, falseAccusations: 0 },
   }
 }
 
@@ -115,6 +118,8 @@ function clone(s: GameState): GameState {
     phase: s.phase,
     log: [...s.log],
     awaitingIntents: s.awaitingIntents,
+    calledThisRound: s.calledThisRound,
+    reads: { ...s.reads },
   }
 }
 
@@ -245,7 +250,34 @@ export function reducer(state: GameState, action: Action): GameState {
           e.intentSource = m.source
         }
       })
+      s.enemies.forEach((e) => (e.revealed = null))
+      s.calledThisRound = false
       s.awaitingIntents = false
+      return s
+    }
+    case 'ACCUSE': {
+      if (state.phase !== 'player' || state.awaitingIntents) return state
+      const s = clone(state)
+      if (s.calledThisRound) return state
+      const e = s.enemies[action.enemy]
+      const me = s.players[s.activeSeat]
+      if (!e || e.hp <= 0 || !me) return state
+      s.calledThisRound = true
+      e.revealed = e.intentSource
+      if (e.intentSource === 'scripted') {
+        s.reads.caught += 1
+        me.energy += 1
+        logLine(s, 'Imitation exposed — the Machine was faking. +1 energy.')
+      } else {
+        s.reads.falseAccusations += 1
+        dealDamage(me, 4)
+        logLine(s, 'Wrong — that was the Machine thinking. -4 HP.')
+        if (s.players.every((p) => p.hp <= 0)) {
+          s.players.forEach((p) => (p.hp = Math.max(0, p.hp)))
+          s.phase = 'lose'
+          logLine(s, 'You have been deleted.')
+        }
+      }
       return s
     }
     case 'RESTART':
