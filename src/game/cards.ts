@@ -1,6 +1,7 @@
 import type { CardDef } from './types'
 
-// Starter card pool. Day 2 expands this toward ~12 cards.
+// Card pool. The starter deck uses a subset; Bulwark and Power Surge live in
+// the pool for a future reward/draft system (post-jam) without code changes.
 export const CARDS: Record<string, CardDef> = {
   strike: {
     key: 'strike',
@@ -10,13 +11,13 @@ export const CARDS: Record<string, CardDef> = {
     text: 'Deal 6 damage.',
     damage: 6,
   },
-  defend: {
-    key: 'defend',
-    name: 'Defend',
-    cost: 1,
-    type: 'skill',
-    text: 'Gain 5 block.',
-    block: 5,
+  quickjab: {
+    key: 'quickjab',
+    name: 'Quick Jab',
+    cost: 0,
+    type: 'attack',
+    text: 'Deal 3 damage.',
+    damage: 3,
   },
   heavy: {
     key: 'heavy',
@@ -25,6 +26,55 @@ export const CARDS: Record<string, CardDef> = {
     type: 'attack',
     text: 'Deal 10 damage.',
     damage: 10,
+  },
+  powersurge: {
+    key: 'powersurge',
+    name: 'Power Surge',
+    cost: 2,
+    type: 'attack',
+    text: 'Deal 14 damage.',
+    damage: 14,
+  },
+  expose: {
+    key: 'expose',
+    name: 'Expose',
+    cost: 1,
+    type: 'skill',
+    text: 'Apply 2 Vulnerable.',
+    vulnerable: 2,
+  },
+  disrupt: {
+    key: 'disrupt',
+    name: 'Disrupt',
+    cost: 1,
+    type: 'skill',
+    text: 'Apply 2 Weak.',
+    weak: 2,
+  },
+  defend: {
+    key: 'defend',
+    name: 'Defend',
+    cost: 1,
+    type: 'skill',
+    text: 'Gain 5 block.',
+    block: 5,
+  },
+  bulwark: {
+    key: 'bulwark',
+    name: 'Bulwark',
+    cost: 2,
+    type: 'skill',
+    text: 'Gain 12 block.',
+    block: 12,
+  },
+  reroute: {
+    key: 'reroute',
+    name: 'Reroute',
+    cost: 1,
+    type: 'skill',
+    text: 'Gain 4 block. Draw 1.',
+    block: 4,
+    draw: 1,
   },
   overclock: {
     key: 'overclock',
@@ -36,16 +86,19 @@ export const CARDS: Record<string, CardDef> = {
   },
 }
 
-// 10-card starter deck.
+// 12-card starter deck: offense (Strike x3 / Quick Jab / Heavy), defense
+// (Defend x3 / Reroute), cycle (Overclock), and the status pair (Expose / Disrupt).
 export const STARTER_DECK: string[] = [
   'strike',
   'strike',
   'strike',
-  'strike',
-  'defend',
-  'defend',
-  'defend',
-  'defend',
+  'quickjab',
   'heavy',
+  'defend',
+  'defend',
+  'defend',
+  'reroute',
   'overclock',
+  'expose',
+  'disrupt',
 ]

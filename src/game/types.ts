@@ -9,6 +9,8 @@ export interface CardDef {
   damage?: number
   block?: number
   draw?: number
+  vulnerable?: number
+  weak?: number
 }
 
 // A concrete card instance in a deck (def + unique instance id for React keys).
@@ -37,6 +39,8 @@ export interface Combatant {
   energy: number
   maxEnergy: number
   block: number
+  vulnerable: number
+  weak: number
   deck: Card[]
   hand: Card[]
   discard: Card[]
@@ -49,6 +53,8 @@ export interface Enemy {
   hp: number
   maxHp: number
   block: number
+  vulnerable: number
+  weak: number
   intent: Intent
   intentSource: MoveSource
   targetSeat: number

@@ -12,7 +12,7 @@ export function decideEnemyMove(): EnemyMove {
   const roll = Math.random()
   const intent: Intent =
     roll < 0.7
-      ? { type: 'attack', value: 7 + Math.floor(Math.random() * 5) }
+      ? { type: 'attack', value: 8 + Math.floor(Math.random() * 5) } // 8-12
       : { type: 'block', value: 8 }
   return { intent, source: 'scripted' }
 }

@@ -3,9 +3,13 @@ import { StatBar } from './StatBar'
 
 export function EnemyPanel({ enemy }: { enemy: Enemy }) {
   const dead = enemy.hp <= 0
+  const shownAttack =
+    enemy.weak > 0
+      ? Math.floor(enemy.intent.value * 0.75)
+      : enemy.intent.value
   const intentText =
     enemy.intent.type === 'attack'
-      ? `Intends to attack for ${enemy.intent.value}`
+      ? `Intends to attack for ${shownAttack}`
       : `Intends to shield (+${enemy.intent.value})`
   return (
     <div
@@ -29,17 +33,29 @@ export function EnemyPanel({ enemy }: { enemy: Enemy }) {
         </div>
       </div>
       <StatBar value={enemy.hp} max={enemy.maxHp} className="bg-red-500" />
-      <p
-        className={`mt-2 text-xs ${
-          dead
-            ? 'text-neutral-500'
-            : enemy.intent.type === 'attack'
-              ? 'text-red-300'
-              : 'text-sky-300'
-        }`}
-      >
-        {dead ? 'Offline.' : intentText}
-      </p>
+      <div className="mt-2 flex items-center gap-2">
+        <p
+          className={`text-xs ${
+            dead
+              ? 'text-neutral-500'
+              : enemy.intent.type === 'attack'
+                ? 'text-red-300'
+                : 'text-sky-300'
+          }`}
+        >
+          {dead ? 'Offline.' : intentText}
+        </p>
+        {!dead && enemy.vulnerable > 0 && (
+          <span className="rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300">
+            VULN {enemy.vulnerable}
+          </span>
+        )}
+        {!dead && enemy.weak > 0 && (
+          <span className="rounded bg-amber-700/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
+            WEAK {enemy.weak}
+          </span>
+        )}
+      </div>
     </div>
   )
 }

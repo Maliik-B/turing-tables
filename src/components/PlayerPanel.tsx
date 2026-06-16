@@ -9,6 +9,16 @@ export function PlayerPanel({ player }: { player: Combatant }) {
           {player.name}
         </span>
         <div className="flex items-center gap-2 text-sm">
+          {player.vulnerable > 0 && (
+            <span className="rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300">
+              VULN {player.vulnerable}
+            </span>
+          )}
+          {player.weak > 0 && (
+            <span className="rounded bg-amber-700/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
+              WEAK {player.weak}
+            </span>
+          )}
           {player.block > 0 && (
             <span className="rounded bg-sky-500/20 px-2 py-0.5 text-xs text-sky-300">
               🛡 {player.block}

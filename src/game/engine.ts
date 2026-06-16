@@ -4,7 +4,7 @@ import { decideEnemyMove } from './opponent'
 
 const HAND_SIZE = 5
 const PLAYER_MAX_HP = 50
-const ENEMY_MAX_HP = 45
+const ENEMY_MAX_HP = 80
 
 let uidCounter = 1
 function instantiate(key: string): Card {
@@ -40,6 +40,13 @@ function dealDamage(target: { hp: number; block: number }, amount: number): void
   target.hp -= amount - absorbed
 }
 
+// Weak reduces dealt damage 25%; Vulnerable increases taken damage 50%.
+function modified(base: number, attackerWeak: number, targetVuln: number): number {
+  const weakMult = attackerWeak > 0 ? 0.75 : 1
+  const vulnMult = targetVuln > 0 ? 1.5 : 1
+  return Math.floor(base * weakMult * vulnMult)
+}
+
 function makePlayer(seat: number): Combatant {
   const c: Combatant = {
     id: `seat-${seat}`,
@@ -49,6 +56,8 @@ function makePlayer(seat: number): Combatant {
     energy: 3,
     maxEnergy: 3,
     block: 0,
+    vulnerable: 0,
+    weak: 0,
     deck: shuffle(STARTER_DECK.map(instantiate)),
     hand: [],
     discard: [],
@@ -66,6 +75,8 @@ function makeEnemy(i: number, seatCount: number): Enemy {
     hp: ENEMY_MAX_HP,
     maxHp: ENEMY_MAX_HP,
     block: 0,
+    vulnerable: 0,
+    weak: 0,
     intent: move.intent,
     intentSource: move.source,
     targetSeat: i % Math.max(1, seatCount),
@@ -120,8 +131,9 @@ function runEnemyPhase(s: GameState): void {
     const target = s.players[e.targetSeat] ?? s.players.find((p) => p.hp > 0)
     if (!target) continue
     if (e.intent.type === 'attack') {
-      dealDamage(target, e.intent.value)
-      logLine(s, `${e.name} attacks ${target.name} for ${e.intent.value}.`)
+      const amount = modified(e.intent.value, e.weak, target.vulnerable)
+      dealDamage(target, amount)
+      logLine(s, `${e.name} attacks ${target.name} for ${amount}.`)
     } else {
       e.block += e.intent.value
       logLine(s, `${e.name} shields (+${e.intent.value}).`)
@@ -133,6 +145,12 @@ function runEnemyPhase(s: GameState): void {
     s.phase = 'lose'
     logLine(s, 'The party has been deleted.')
     return
+  }
+
+  // End-of-round: statuses tick down for everyone.
+  for (const c of [...s.players, ...s.enemies]) {
+    if (c.vulnerable > 0) c.vulnerable -= 1
+    if (c.weak > 0) c.weak -= 1
   }
 
   s.round += 1
@@ -167,13 +185,14 @@ export function reducer(state: GameState, action: Action): GameState {
       if (!card || card.cost > p.energy) return state
       p.hand.splice(p.hand.indexOf(card), 1)
       p.energy -= card.cost
-      if (card.damage) {
-        const ti = action.targetEnemy ?? firstAliveEnemy(s)
-        const enemy = s.enemies[ti]
-        if (enemy) {
-          dealDamage(enemy, card.damage)
-          logLine(s, `${p.name} plays ${card.name} → ${card.damage} dmg.`)
-        }
+
+      const ti = action.targetEnemy ?? firstAliveEnemy(s)
+      const enemy = s.enemies[ti]
+
+      if (card.damage && enemy) {
+        const amount = modified(card.damage, p.weak, enemy.vulnerable)
+        dealDamage(enemy, amount)
+        logLine(s, `${p.name} plays ${card.name} → ${amount} dmg.`)
       }
       if (card.block) {
         p.block += card.block
@@ -183,7 +202,16 @@ export function reducer(state: GameState, action: Action): GameState {
         drawInto(p, card.draw)
         logLine(s, `${p.name} plays ${card.name} (draw ${card.draw}).`)
       }
+      if (card.vulnerable && enemy) {
+        enemy.vulnerable += card.vulnerable
+        logLine(s, `${p.name} plays ${card.name} (+${card.vulnerable} Vulnerable).`)
+      }
+      if (card.weak && enemy) {
+        enemy.weak += card.weak
+        logLine(s, `${p.name} plays ${card.name} (+${card.weak} Weak).`)
+      }
       p.discard.push(card)
+
       if (s.enemies.every((e) => e.hp <= 0)) {
         s.enemies.forEach((e) => (e.hp = Math.max(0, e.hp)))
         s.phase = 'win'
