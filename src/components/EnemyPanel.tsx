@@ -37,7 +37,7 @@ export function EnemyPanel({
         </div>
       </div>
       <StatBar value={enemy.hp} max={enemy.maxHp} className="bg-red-500" />
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         {dead ? (
           <p className="text-xs text-neutral-500">Offline.</p>
         ) : thinking ? (
@@ -59,6 +59,17 @@ export function EnemyPanel({
             {enemy.weak > 0 && (
               <span className="rounded bg-amber-700/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
                 WEAK {enemy.weak}
+              </span>
+            )}
+            {enemy.revealed && (
+              <span
+                className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                  enemy.revealed === 'scripted'
+                    ? 'bg-fuchsia-500/20 text-fuchsia-300'
+                    : 'bg-emerald-500/20 text-emerald-300'
+                }`}
+              >
+                {enemy.revealed === 'scripted' ? 'WAS IMITATION' : 'WAS THINKING'}
               </span>
             )}
           </>

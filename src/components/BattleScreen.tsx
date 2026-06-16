@@ -16,11 +16,20 @@ export function BattleScreen({
   apiKey: string
   onApiKey: (key: string) => void
 }) {
-  const { enemies, players, activeSeat, phase, round, log, awaitingIntents } =
-    state
+  const {
+    enemies,
+    players,
+    activeSeat,
+    phase,
+    round,
+    log,
+    awaitingIntents,
+    calledThisRound,
+    reads,
+  } = state
   const me = players[activeSeat]
   const over = phase === 'win' || phase === 'lose'
-  const busy = over || awaitingIntents
+  const aliveEnemy = enemies.findIndex((e) => e.hp > 0)
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-5">
@@ -95,7 +104,8 @@ export function BattleScreen({
                       playable={
                         phase === 'player' &&
                         !me.ended &&
-                        !busy &&
+                        !over &&
+                        !awaitingIntents &&
                         card.cost <= me.energy
                       }
                       onClick={() =>
@@ -115,14 +125,33 @@ export function BattleScreen({
               <span className="font-mono text-xs text-neutral-500">
                 Deck {me.deck.length} · Discard {me.discard.length}
               </span>
-              <button
-                type="button"
-                disabled={over || me.ended || awaitingIntents}
-                onClick={() => dispatch({ type: 'END_TURN', seat: activeSeat })}
-                className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-5 py-2 font-semibold text-amber-300 hover:bg-amber-500/20 disabled:opacity-40"
-              >
-                End Turn
-              </button>
+              <div className="flex items-center gap-2">
+                {apiKey && (
+                  <button
+                    type="button"
+                    title="Accuse the Machine's telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: -4 HP."
+                    disabled={
+                      over || awaitingIntents || calledThisRound || aliveEnemy < 0
+                    }
+                    onClick={() =>
+                      dispatch({ type: 'ACCUSE', enemy: aliveEnemy })
+                    }
+                    className="rounded-lg border border-fuchsia-500/50 bg-fuchsia-500/10 px-4 py-2 font-semibold text-fuchsia-300 hover:bg-fuchsia-500/20 disabled:opacity-40"
+                  >
+                    Call Imitation
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={over || me.ended || awaitingIntents}
+                  onClick={() =>
+                    dispatch({ type: 'END_TURN', seat: activeSeat })
+                  }
+                  className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-5 py-2 font-semibold text-amber-300 hover:bg-amber-500/20 disabled:opacity-40"
+                >
+                  End Turn
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -133,7 +162,7 @@ export function BattleScreen({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-neutral-950/85 px-6 text-center backdrop-blur"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-neutral-950/85 px-6 text-center backdrop-blur"
           >
             <h2
               className={`text-4xl font-bold ${
@@ -142,10 +171,16 @@ export function BattleScreen({
             >
               {phase === 'win' ? 'The Machine halts.' : 'You have been deleted.'}
             </h2>
+            {apiKey && reads.caught + reads.falseAccusations > 0 && (
+              <p className="font-mono text-sm text-neutral-400">
+                Imitations caught: {reads.caught} · Wrong reads:{' '}
+                {reads.falseAccusations}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => dispatch({ type: 'RESTART' })}
-              className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-6 py-2 font-semibold text-amber-300 hover:bg-amber-500/20"
+              className="mt-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-6 py-2 font-semibold text-amber-300 hover:bg-amber-500/20"
             >
               New Trial
             </button>

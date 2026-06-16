@@ -20,21 +20,28 @@ function App() {
   }
 
   // Resolve the Machine's next intent asynchronously (Gemini -> scripted
-  // fallback). Runs whenever a round opens with intents pending.
+  // fallback). When a key is present, a RANDOMIZED "thinking" delay covers
+  // every turn so the instant-resolving scripted (dummy) turns can't be told
+  // apart from Gemini turns by timing.
   useEffect(() => {
     if (!state.awaitingIntents || state.phase !== 'player') return
     let cancelled = false
     const alive = state.enemies.filter((e) => e.hp > 0)
-    Promise.all(
-      alive.map((e) =>
-        decideMove(
-          { lastMove: e.lastMove, hpRatio: e.hp / e.maxHp },
-          { apiKey: apiKey || null },
+    const minThink = apiKey ? 900 + Math.floor(Math.random() * 900) : 150
+    void (async () => {
+      const [intents] = await Promise.all([
+        Promise.all(
+          alive.map((e) =>
+            decideMove(
+              { lastMove: e.lastMove, hpRatio: e.hp / e.maxHp },
+              { apiKey: apiKey || null },
+            ),
+          ),
         ),
-      ),
-    ).then((intents) => {
+        new Promise((r) => setTimeout(r, minThink)),
+      ])
       if (!cancelled) dispatch({ type: 'SET_INTENTS', intents })
-    })
+    })()
     return () => {
       cancelled = true
     }
