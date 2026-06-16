@@ -30,6 +30,8 @@ export function BattleScreen({
   const me = players[activeSeat]
   const over = phase === 'win' || phase === 'lose'
   const aliveEnemy = enemies.findIndex((e) => e.hp > 0)
+  const targetSevered =
+    aliveEnemy >= 0 && (enemies[aliveEnemy]?.severedUntilRound ?? 0) >= round
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-5">
@@ -61,7 +63,12 @@ export function BattleScreen({
 
       <div className="grid gap-3 sm:grid-cols-2">
         {enemies.map((e) => (
-          <EnemyPanel key={e.id} enemy={e} thinking={awaitingIntents} />
+          <EnemyPanel
+            key={e.id}
+            enemy={e}
+            thinking={awaitingIntents}
+            round={round}
+          />
         ))}
       </div>
 
@@ -131,7 +138,11 @@ export function BattleScreen({
                     type="button"
                     title="Accuse the Machine's telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: -4 HP."
                     disabled={
-                      over || awaitingIntents || calledThisRound || aliveEnemy < 0
+                      over ||
+                      awaitingIntents ||
+                      calledThisRound ||
+                      aliveEnemy < 0 ||
+                      targetSevered
                     }
                     onClick={() =>
                       dispatch({ type: 'ACCUSE', enemy: aliveEnemy })

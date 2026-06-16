@@ -82,6 +82,7 @@ function makeEnemy(i: number, seatCount: number): Enemy {
     targetSeat: i % Math.max(1, seatCount),
     lastMove: null,
     revealed: null,
+    severedUntilRound: 0,
   }
 }
 
@@ -219,6 +220,10 @@ export function reducer(state: GameState, action: Action): GameState {
         enemy.weak += card.weak
         logLine(s, `${p.name} plays ${card.name} (+${card.weak} Weak).`)
       }
+      if (card.sever && enemy) {
+        enemy.severedUntilRound = s.round + card.sever
+        logLine(s, `${p.name} plays ${card.name} — the Machine's link is severed.`)
+      }
       p.discard.push(card)
 
       if (s.enemies.every((e) => e.hp <= 0)) {
@@ -262,6 +267,8 @@ export function reducer(state: GameState, action: Action): GameState {
       const e = s.enemies[action.enemy]
       const me = s.players[s.activeSeat]
       if (!e || e.hp <= 0 || !me) return state
+      // Can't "read" a severed Machine — its link is cut, the move is known.
+      if (e.severedUntilRound >= s.round) return state
       s.calledThisRound = true
       e.revealed = e.intentSource
       if (e.intentSource === 'scripted') {

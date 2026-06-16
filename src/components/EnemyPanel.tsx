@@ -4,11 +4,14 @@ import { StatBar } from './StatBar'
 export function EnemyPanel({
   enemy,
   thinking,
+  round,
 }: {
   enemy: Enemy
   thinking: boolean
+  round: number
 }) {
   const dead = enemy.hp <= 0
+  const severedLeft = Math.max(0, enemy.severedUntilRound - round + 1)
   const shownAttack =
     enemy.weak > 0 ? Math.floor(enemy.intent.value * 0.75) : enemy.intent.value
   const intentText =
@@ -26,6 +29,11 @@ export function EnemyPanel({
           {enemy.name}
         </span>
         <div className="flex items-center gap-2 text-sm">
+          {!dead && severedLeft > 0 && (
+            <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-red-300">
+              SEVERED {severedLeft}
+            </span>
+          )}
           {enemy.block > 0 && (
             <span className="rounded bg-sky-500/20 px-2 py-0.5 text-xs text-sky-300">
               🛡 {enemy.block}

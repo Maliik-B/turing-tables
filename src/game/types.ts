@@ -11,6 +11,8 @@ export interface CardDef {
   draw?: number
   vulnerable?: number
   weak?: number
+  // "Sever": force the Machine onto the scripted brain for this many turns.
+  sever?: number
 }
 
 // A concrete card instance in a deck (def + unique instance id for React keys).
@@ -61,6 +63,8 @@ export interface Enemy {
   lastMove: IntentType | null
   // Set to the move's true source once the player accuses it (else null).
   revealed: MoveSource | null
+  // Rounds <= this are forced onto the scripted brain (Sever card). 0 = never.
+  severedUntilRound: number
 }
 
 export type Phase = 'player' | 'win' | 'lose'
