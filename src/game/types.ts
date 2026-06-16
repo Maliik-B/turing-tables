@@ -58,6 +58,7 @@ export interface Enemy {
   intent: Intent
   intentSource: MoveSource
   targetSeat: number
+  lastMove: IntentType | null
 }
 
 export type Phase = 'player' | 'win' | 'lose'

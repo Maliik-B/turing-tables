@@ -68,7 +68,7 @@ function makePlayer(seat: number): Combatant {
 }
 
 function makeEnemy(i: number, seatCount: number): Enemy {
-  const move = decideEnemyMove()
+  const move = decideEnemyMove({ lastMove: null, hpRatio: 1 })
   return {
     id: `bot-${i}`,
     name: 'THE MACHINE',
@@ -80,6 +80,7 @@ function makeEnemy(i: number, seatCount: number): Enemy {
     intent: move.intent,
     intentSource: move.source,
     targetSeat: i % Math.max(1, seatCount),
+    lastMove: null,
   }
 }
 
@@ -138,6 +139,7 @@ function runEnemyPhase(s: GameState): void {
       e.block += e.intent.value
       logLine(s, `${e.name} shields (+${e.intent.value}).`)
     }
+    e.lastMove = e.intent.type
   }
 
   if (s.players.every((p) => p.hp <= 0)) {
@@ -159,7 +161,7 @@ function runEnemyPhase(s: GameState): void {
     .filter((i) => i >= 0)
   for (const e of s.enemies) {
     if (e.hp <= 0) continue
-    const move = decideEnemyMove()
+    const move = decideEnemyMove({ lastMove: e.lastMove, hpRatio: e.hp / e.maxHp })
     e.intent = move.intent
     e.intentSource = move.source
     e.targetSeat =
