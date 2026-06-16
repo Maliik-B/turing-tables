@@ -84,6 +84,14 @@ export const CARDS: Record<string, CardDef> = {
     text: 'Draw 2 cards.',
     draw: 2,
   },
+  sever: {
+    key: 'sever',
+    name: 'Sever',
+    cost: 1,
+    type: 'skill',
+    text: "Cut the Machine's link — it can only run scripted routines until restored.",
+    sever: 2,
+  },
 }
 
 // 12-card starter deck: offense (Strike x3 / Quick Jab / Heavy), defense
@@ -101,4 +109,5 @@ export const STARTER_DECK: string[] = [
   'overclock',
   'expose',
   'disrupt',
+  'sever',
 ]

@@ -34,7 +34,10 @@ function App() {
           alive.map((e) =>
             decideMove(
               { lastMove: e.lastMove, hpRatio: e.hp / e.maxHp },
-              { apiKey: apiKey || null },
+              {
+                apiKey: apiKey || null,
+                severed: e.severedUntilRound >= state.round,
+              },
             ),
           ),
         ),
