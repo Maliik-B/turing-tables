@@ -70,9 +70,12 @@ export interface GameState {
   round: number
   phase: Phase
   log: string[]
+  // True while the Machine's next intent is being decided (async Gemini call).
+  awaitingIntents: boolean
 }
 
 export type Action =
   | { type: 'PLAY_CARD'; seat: number; uid: number; targetEnemy?: number }
   | { type: 'END_TURN'; seat: number }
+  | { type: 'SET_INTENTS'; intents: { intent: Intent; source: MoveSource }[] }
   | { type: 'RESTART' }

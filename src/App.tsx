@@ -1,15 +1,54 @@
-import { useReducer } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { createInitialState, reducer } from './game/engine'
+import { decideMove } from './game/brain'
 import { BattleScreen } from './components/BattleScreen'
+
+const KEY_STORAGE = 'tt_gemini_key'
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () =>
     createInitialState(),
   )
+  const [apiKey, setApiKey] = useState<string>(
+    () => localStorage.getItem(KEY_STORAGE) ?? '',
+  )
+
+  const updateKey = (k: string) => {
+    setApiKey(k)
+    if (k) localStorage.setItem(KEY_STORAGE, k)
+    else localStorage.removeItem(KEY_STORAGE)
+  }
+
+  // Resolve the Machine's next intent asynchronously (Gemini -> scripted
+  // fallback). Runs whenever a round opens with intents pending.
+  useEffect(() => {
+    if (!state.awaitingIntents || state.phase !== 'player') return
+    let cancelled = false
+    const alive = state.enemies.filter((e) => e.hp > 0)
+    Promise.all(
+      alive.map((e) =>
+        decideMove(
+          { lastMove: e.lastMove, hpRatio: e.hp / e.maxHp },
+          { apiKey: apiKey || null },
+        ),
+      ),
+    ).then((intents) => {
+      if (!cancelled) dispatch({ type: 'SET_INTENTS', intents })
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.awaitingIntents, state.phase, state.round, apiKey])
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      <BattleScreen state={state} dispatch={dispatch} />
+      <BattleScreen
+        state={state}
+        dispatch={dispatch}
+        apiKey={apiKey}
+        onApiKey={updateKey}
+      />
     </div>
   )
 }

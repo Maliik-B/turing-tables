@@ -97,6 +97,7 @@ export function createInitialState(playerCount = 1, enemyCount = 1): GameState {
     round: 1,
     phase: 'player',
     log: ['A new trial begins.'],
+    awaitingIntents: true,
   }
 }
 
@@ -113,6 +114,7 @@ function clone(s: GameState): GameState {
     round: s.round,
     phase: s.phase,
     log: [...s.log],
+    awaitingIntents: s.awaitingIntents,
   }
 }
 
@@ -159,14 +161,14 @@ function runEnemyPhase(s: GameState): void {
   const aliveSeats = s.players
     .map((p, i) => (p.hp > 0 ? i : -1))
     .filter((i) => i >= 0)
+  // Retarget synchronously; the next intent is decided asynchronously
+  // (Gemini, with scripted fallback) via the SET_INTENTS action.
   for (const e of s.enemies) {
     if (e.hp <= 0) continue
-    const move = decideEnemyMove({ lastMove: e.lastMove, hpRatio: e.hp / e.maxHp })
-    e.intent = move.intent
-    e.intentSource = move.source
     e.targetSeat =
       aliveSeats[Math.floor(Math.random() * aliveSeats.length)] ?? 0
   }
+  s.awaitingIntents = true
   for (const p of s.players) {
     if (p.hp <= 0) continue
     p.ended = false
@@ -231,6 +233,19 @@ export function reducer(state: GameState, action: Action): GameState {
       p.hand = []
       const allEnded = s.players.every((pl) => pl.hp <= 0 || pl.ended)
       if (allEnded) runEnemyPhase(s)
+      return s
+    }
+    case 'SET_INTENTS': {
+      const s = clone(state)
+      const alive = s.enemies.filter((e) => e.hp > 0)
+      action.intents.forEach((m, i) => {
+        const e = alive[i]
+        if (e) {
+          e.intent = m.intent
+          e.intentSource = m.source
+        }
+      })
+      s.awaitingIntents = false
       return s
     }
     case 'RESTART':
