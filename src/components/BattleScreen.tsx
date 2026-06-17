@@ -38,11 +38,11 @@ export function BattleScreen({
       {/* Solstice dawn glow — warms and rises as the rounds wear on. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[60vh]"
+        className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[88vh]"
         style={{
           background:
-            'radial-gradient(75% 100% at 50% 115%, rgba(251,191,36,0.20), rgba(180,83,9,0.10) 38%, transparent 68%)',
-          opacity: 0.3 + (0.6 * Math.min(round, 12)) / 12,
+            'radial-gradient(110% 95% at 50% 132%, rgba(251,191,36,0.42), rgba(217,119,6,0.16) 50%, transparent 78%)',
+          opacity: 0.72 + (0.28 * Math.min(round, 10)) / 10,
         }}
       />
       <header className="flex items-center justify-between">
