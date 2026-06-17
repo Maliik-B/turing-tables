@@ -35,12 +35,25 @@ export function BattleScreen({
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-5">
+      {/* Solstice dawn glow — warms and rises as the rounds wear on. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[60vh]"
+        style={{
+          background:
+            'radial-gradient(75% 100% at 50% 115%, rgba(251,191,36,0.20), rgba(180,83,9,0.10) 38%, transparent 68%)',
+          opacity: 0.3 + (0.6 * Math.min(round, 12)) / 12,
+        }}
+      />
       <header className="flex items-center justify-between">
         <span className="font-mono text-xs uppercase tracking-[0.3em] text-amber-500/70">
           Turing Tables
         </span>
         <span className="font-mono text-xs text-neutral-500">Round {round}</span>
       </header>
+      <p className="-mt-1 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-amber-200/40">
+        the longest day · hold the light until dawn
+      </p>
 
       <div className="flex items-center gap-2 text-xs">
         <span
@@ -180,7 +193,9 @@ export function BattleScreen({
                 phase === 'win' ? 'text-emerald-400' : 'text-red-400'
               }`}
             >
-              {phase === 'win' ? 'The Machine halts.' : 'You have been deleted.'}
+              {phase === 'win'
+                ? 'Dawn breaks. The Machine halts.'
+                : 'The long dark takes you.'}
             </h2>
             {apiKey && reads.caught + reads.falseAccusations > 0 && (
               <p className="font-mono text-sm text-neutral-400">
