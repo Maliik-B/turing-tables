@@ -66,7 +66,7 @@ function App() {
   }, [state])
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen text-neutral-100">
       <BattleScreen
         state={state}
         dispatch={dispatch}
