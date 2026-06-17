@@ -13,6 +13,8 @@ export interface CardDef {
   weak?: number
   // "Sever": force the Machine onto the scripted brain for this many turns.
   sever?: number
+  // Removed from the deck for the rest of the combat after being played.
+  exhaust?: boolean
 }
 
 // A concrete card instance in a deck (def + unique instance id for React keys).

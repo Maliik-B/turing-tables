@@ -224,7 +224,8 @@ export function reducer(state: GameState, action: Action): GameState {
         enemy.severedUntilRound = s.round + card.sever
         logLine(s, `${p.name} plays ${card.name} — the Machine's link is severed.`)
       }
-      p.discard.push(card)
+      // Exhaust cards leave combat instead of going to the discard pile.
+      if (!card.exhaust) p.discard.push(card)
 
       if (s.enemies.every((e) => e.hp <= 0)) {
         s.enemies.forEach((e) => (e.hp = Math.max(0, e.hp)))
