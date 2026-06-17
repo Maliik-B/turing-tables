@@ -23,7 +23,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # npm install (not ci): the lockfile is generated on Windows and lacks
+      # some Linux-only optional deps (Tailwind v4 native bits), which npm ci
+      # rejects. npm install resolves them for the runner platform.
+      - run: npm install
       - run: npx tsc -b && npx vite build --base=/turing-tables/
       - uses: actions/upload-pages-artifact@v3
         with:
