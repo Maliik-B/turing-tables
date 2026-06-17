@@ -89,8 +89,9 @@ export const CARDS: Record<string, CardDef> = {
     name: 'Sever',
     cost: 1,
     type: 'skill',
-    text: "Cut the Machine's link — it can only run scripted routines until restored.",
+    text: "Cut the Machine's link — it runs only scripted routines until restored. Exhaust.",
     sever: 2,
+    exhaust: true,
   },
 }
 
