@@ -1,73 +1,31 @@
-# React + TypeScript + Vite
+# Turing Tables
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small web deckbuilder where your opponent is a machine — and the question is whether you can tell when it is *really* thinking.
 
-Currently, two official plugins are available:
+Built for the [dev.to June Solstice Game Jam](https://dev.to/challenges/june-game-jam-2026-06-03) as an ode to Alan Turing (his June birthday and the imitation game inspired it). The Machine's moves are decided by a real LLM (Google Gemini) most of the time and by a scripted "imitation" the rest — and you score by *catching the imitation*.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Play
 
-## React Compiler
+Run locally:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open the printed localhost URL. The game is fully playable with **no API key** — the Machine runs its scripted brain. To face the real Gemini opponent, paste a free [Google AI Studio](https://aistudio.google.com/) API key into the in-game field; it is stored only in your browser's `localStorage` and used solely to decide the opponent's moves.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Mechanics
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Deckbuilder combat** — energy, attacks, block, and status effects (Vulnerable / Weak).
+- **Gemini opponent** — the Machine's intent is chosen by `gemini-2.5-flash` when a key is present, mixed ~70/30 with a scripted brain so the source is unpredictable; any failure falls back to scripted, so it is always free and offline-playable.
+- **The guess-check** — accuse a telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: −4 HP. A randomized "thinking" delay keeps the scripted turns from leaking by timing.
+- **Sever** — an Exhaust card that cuts the Machine's link, forcing the scripted brain for a couple of turns.
+
+## Tech
+
+React + TypeScript + Vite + Tailwind v4 + Motion. Fully static (no backend); the Gemini call is a client-side `fetch` with a player-supplied key.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
