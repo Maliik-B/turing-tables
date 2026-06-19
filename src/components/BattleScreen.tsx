@@ -40,16 +40,6 @@ export function BattleScreen({
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-5">
-      {/* Solstice dawn glow — warms and rises as the rounds wear on. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[88vh]"
-        style={{
-          background:
-            'radial-gradient(110% 95% at 50% 132%, rgba(251,191,36,0.42), rgba(217,119,6,0.16) 50%, transparent 78%)',
-          opacity: 0.72 + (0.28 * Math.min(round, 10)) / 10,
-        }}
-      />
       <header className="flex items-center justify-between">
         <span className="font-mono text-xs uppercase tracking-[0.3em] text-amber-500/70">
           Turing Tables
@@ -92,8 +82,24 @@ export function BattleScreen({
         ))}
       </div>
 
-      <div className="min-h-[2.25rem] rounded-lg border border-neutral-800/60 bg-neutral-900/40 px-4 py-2 text-xs text-neutral-400">
-        {awaitingIntents ? 'The Machine is thinking…' : (log[0] ?? '')}
+      <div className="h-24 space-y-0.5 overflow-y-auto rounded-lg border border-neutral-800/60 bg-neutral-900/40 px-4 py-2 text-xs">
+        {awaitingIntents && (
+          <p className="animate-pulse text-amber-300/80">
+            The Machine is thinking…
+          </p>
+        )}
+        {log.map((line, i) => (
+          <p
+            key={i}
+            className={
+              i === 0 && !awaitingIntents
+                ? 'text-neutral-200'
+                : 'text-neutral-500'
+            }
+          >
+            {line}
+          </p>
+        ))}
       </div>
 
       <div className="mt-auto flex flex-col gap-3">

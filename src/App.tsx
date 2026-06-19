@@ -2,8 +2,12 @@ import { useEffect, useReducer, useState } from 'react'
 import { createInitialState, reducer } from './game/engine'
 import { decideMove, buildDossier } from './game/brain'
 import { BattleScreen } from './components/BattleScreen'
+import { MenuScreen } from './components/MenuScreen'
+import { IntroScroll } from './components/IntroScroll'
 
 const KEY_STORAGE = 'tt_gemini_key'
+
+type Screen = 'menu' | 'intro' | 'game'
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () =>
@@ -12,6 +16,7 @@ function App() {
   const [apiKey, setApiKey] = useState<string>(
     () => localStorage.getItem(KEY_STORAGE) ?? '',
   )
+  const [screen, setScreen] = useState<Screen>('menu')
 
   const updateKey = (k: string) => {
     setApiKey(k)
@@ -20,10 +25,11 @@ function App() {
   }
 
   // Resolve the Machine's next intent asynchronously (Gemini -> scripted
-  // fallback). When a key is present, a RANDOMIZED "thinking" delay covers
-  // every turn so the instant-resolving scripted (dummy) turns can't be told
-  // apart from Gemini turns by timing.
+  // fallback) once we're in a fight. A randomized "thinking" delay (with a key)
+  // covers every turn so the instant scripted (dummy) turns can't be told from
+  // Gemini turns by timing. The Mainframe also gets a memory dossier.
   useEffect(() => {
+    if (screen !== 'game') return
     if (!state.awaitingIntents || state.phase !== 'player') return
     let cancelled = false
     const alive = state.enemies.filter((e) => e.hp > 0)
@@ -53,16 +59,39 @@ function App() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.awaitingIntents, state.phase, state.round, apiKey])
+  }, [state.awaitingIntents, state.phase, state.round, apiKey, screen])
+
+  const glowOpacity =
+    screen === 'game' ? 0.72 + (0.28 * Math.min(state.round, 10)) / 10 : 0.55
 
   return (
     <div className="min-h-screen text-neutral-100">
-      <BattleScreen
-        state={state}
-        dispatch={dispatch}
-        apiKey={apiKey}
-        onApiKey={updateKey}
+      {/* Solstice dawn glow — backs every screen; rises as the fight wears on. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[88vh]"
+        style={{
+          background:
+            'radial-gradient(110% 95% at 50% 132%, rgba(251,191,36,0.42), rgba(217,119,6,0.16) 50%, transparent 78%)',
+          opacity: glowOpacity,
+        }}
       />
+      {screen === 'menu' && (
+        <MenuScreen
+          apiKey={apiKey}
+          onApiKey={updateKey}
+          onBegin={() => setScreen('intro')}
+        />
+      )}
+      {screen === 'intro' && <IntroScroll onContinue={() => setScreen('game')} />}
+      {screen === 'game' && (
+        <BattleScreen
+          state={state}
+          dispatch={dispatch}
+          apiKey={apiKey}
+          onApiKey={updateKey}
+        />
+      )}
     </div>
   )
 }

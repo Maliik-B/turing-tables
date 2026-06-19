@@ -84,7 +84,7 @@ export function EnemyPanel({
         )}
       </div>
       {!dead && enemy.intel.length > 0 && (
-        <div className="pointer-events-none absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-neutral-700 bg-neutral-950/95 p-3 text-left opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
+        <div className="pointer-events-none absolute left-full top-0 z-20 ml-2 w-56 rounded-lg border border-neutral-700 bg-neutral-950/95 p-3 text-left opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
           <p className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400/70">
             Intel
           </p>
