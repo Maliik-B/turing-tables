@@ -72,6 +72,22 @@ export interface Enemy {
   severedUntilRound: number
   // Gemini model id for this enemy's brain; null = scripted only (generation 0).
   model: string | null
+  // Intel lines shown on hover (kit + tier).
+  intel: string[]
+  // The Mainframe: feed the player's cross-trial behavior into its prompt.
+  remembers: boolean
+}
+
+// Running tally of how the player has fought across the whole run — fed to the
+// Mainframe's Gemini prompt so the final boss adapts to them.
+export interface RunStats {
+  cardsPlayed: Record<string, number>
+  attacks: number
+  skills: number
+  severs: number
+  accuses: number
+  damageDealt: number
+  blockGained: number
 }
 
 export type Phase = 'player' | 'cleared' | 'won' | 'lost'
@@ -90,6 +106,8 @@ export interface GameState {
   // Turing-test guess-check: one accusation per round + a running read tally.
   calledThisRound: boolean
   reads: { caught: number; falseAccusations: number }
+  // Cross-trial behavior dossier for the Mainframe's memory mechanic.
+  runStats: RunStats
 }
 
 export type Action =
