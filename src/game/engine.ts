@@ -199,6 +199,14 @@ function runEnemyPhase(s: GameState): void {
     e.targetSeat =
       aliveSeats[Math.floor(Math.random() * aliveSeats.length)] ?? 0
   }
+  // Open the players' new turn: clear status, refill energy, draw a fresh hand.
+  for (const p of s.players) {
+    if (p.hp <= 0) continue
+    p.ended = false
+    p.block = 0
+    p.energy = p.maxEnergy
+    drawInto(p, HAND_SIZE)
+  }
   s.awaitingIntents = true
 }
 
