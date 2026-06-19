@@ -93,7 +93,53 @@ export const CARDS: Record<string, CardDef> = {
     sever: 2,
     exhaust: true,
   },
+  // Reward-only cards (offered between trials, not in the starter deck).
+  overload: {
+    key: 'overload',
+    name: 'Overload',
+    cost: 2,
+    type: 'attack',
+    text: 'Deal 8 damage. Apply 2 Weak.',
+    damage: 8,
+    weak: 2,
+  },
+  reinforce: {
+    key: 'reinforce',
+    name: 'Reinforce',
+    cost: 1,
+    type: 'skill',
+    text: 'Gain 8 block. Apply 2 Vulnerable.',
+    block: 8,
+    vulnerable: 2,
+  },
+  foresight: {
+    key: 'foresight',
+    name: 'Foresight',
+    cost: 1,
+    type: 'skill',
+    text: 'Draw 3 cards.',
+    draw: 3,
+  },
+  siphon: {
+    key: 'siphon',
+    name: 'Siphon',
+    cost: 1,
+    type: 'attack',
+    text: 'Deal 6 damage. Draw 1.',
+    damage: 6,
+    draw: 1,
+  },
 }
+
+// Cards offered as between-trial rewards (stronger than the starter set).
+export const REWARD_POOL: string[] = [
+  'powersurge',
+  'bulwark',
+  'overload',
+  'reinforce',
+  'foresight',
+  'siphon',
+]
 
 // 12-card starter deck: offense (Strike x3 / Quick Jab / Heavy), defense
 // (Defend x3 / Reroute), cycle (Overclock), and the status pair (Expose / Disrupt).

@@ -108,6 +108,8 @@ export interface GameState {
   reads: { caught: number; falseAccusations: number }
   // Cross-trial behavior dossier for the Mainframe's memory mechanic.
   runStats: RunStats
+  // Between-trial card reward: 3 cards offered when a (non-final) trial clears.
+  rewardChoices: Card[]
 }
 
 export type Action =
@@ -115,5 +117,5 @@ export type Action =
   | { type: 'END_TURN'; seat: number }
   | { type: 'SET_INTENTS'; intents: { intent: Intent; source: MoveSource }[] }
   | { type: 'ACCUSE'; enemy: number }
-  | { type: 'CONTINUE' }
+  | { type: 'CHOOSE_REWARD'; uid: number | null }
   | { type: 'RESTART' }

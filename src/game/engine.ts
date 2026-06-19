@@ -1,5 +1,5 @@
 import type { Action, Card, Combatant, Enemy, GameState } from './types'
-import { CARDS, STARTER_DECK } from './cards'
+import { CARDS, STARTER_DECK, REWARD_POOL } from './cards'
 import { RUN, HEAL_FRACTION, type EncounterDef } from './run'
 import { decideEnemyMove } from './opponent'
 
@@ -9,6 +9,11 @@ const PLAYER_MAX_HP = 50
 let uidCounter = 1
 function instantiate(key: string): Card {
   return { ...CARDS[key], uid: uidCounter++ }
+}
+
+// Three distinct reward cards offered when a (non-final) trial is cleared.
+function rollRewards(): Card[] {
+  return shuffle([...REWARD_POOL]).slice(0, 3).map(instantiate)
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -134,6 +139,7 @@ export function createInitialState(): GameState {
       damageDealt: 0,
       blockGained: 0,
     },
+    rewardChoices: [],
   }
   setupEncounter(state, 0)
   return state
@@ -158,6 +164,7 @@ function clone(s: GameState): GameState {
     calledThisRound: s.calledThisRound,
     reads: { ...s.reads },
     runStats: { ...s.runStats, cardsPlayed: { ...s.runStats.cardsPlayed } },
+    rewardChoices: [...s.rewardChoices],
   }
 }
 
@@ -281,6 +288,7 @@ export function reducer(state: GameState, action: Action): GameState {
           logLine(s, 'THE MAINFRAME goes dark. Dawn holds.')
         } else {
           s.phase = 'cleared'
+          s.rewardChoices = rollRewards()
           logLine(s, `${s.enemies[ti]?.name ?? 'The Machine'} halts.`)
         }
       }
@@ -341,9 +349,18 @@ export function reducer(state: GameState, action: Action): GameState {
       }
       return s
     }
-    case 'CONTINUE': {
+    case 'CHOOSE_REWARD': {
       if (state.phase !== 'cleared') return state
       const s = clone(state)
+      if (action.uid != null) {
+        const chosen = s.rewardChoices.find((c) => c.uid === action.uid)
+        const me = s.players[s.activeSeat]
+        if (chosen && me) {
+          me.collection.push(chosen)
+          logLine(s, `Acquired ${chosen.name}.`)
+        }
+      }
+      s.rewardChoices = []
       for (const p of s.players) {
         if (p.hp <= 0) continue
         p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * HEAL_FRACTION))

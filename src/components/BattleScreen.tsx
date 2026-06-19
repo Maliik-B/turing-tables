@@ -28,6 +28,7 @@ export function BattleScreen({
     awaitingIntents,
     calledThisRound,
     reads,
+    rewardChoices,
   } = state
   const me = players[activeSeat]
   const total = RUN.length
@@ -188,16 +189,28 @@ export function BattleScreen({
             <h2 className="text-3xl font-bold text-emerald-400">
               Trial {encounter + 1} cleared.
             </h2>
-            <p className="max-w-sm text-sm text-neutral-400">
-              The light holds. You recover and press deeper — a stronger mind
-              waits in Trial {encounter + 2} of {total}.
+            <p className="max-w-md text-sm text-neutral-400">
+              Recover ~30% HP and take one card before descending to Trial{' '}
+              {encounter + 2} of {total}.
             </p>
+            <div className="flex flex-wrap items-end justify-center gap-3">
+              {rewardChoices.map((card) => (
+                <CardView
+                  key={card.uid}
+                  card={card}
+                  playable
+                  onClick={() =>
+                    dispatch({ type: 'CHOOSE_REWARD', uid: card.uid })
+                  }
+                />
+              ))}
+            </div>
             <button
               type="button"
-              onClick={() => dispatch({ type: 'CONTINUE' })}
-              className="mt-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-6 py-2 font-semibold text-amber-300 hover:bg-amber-500/20"
+              onClick={() => dispatch({ type: 'CHOOSE_REWARD', uid: null })}
+              className="mt-1 text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-300"
             >
-              Press On
+              Skip — take no card
             </button>
           </motion.div>
         )}
