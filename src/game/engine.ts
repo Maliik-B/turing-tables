@@ -1,10 +1,10 @@
 import type { Action, Card, Combatant, Enemy, GameState } from './types'
 import { CARDS, STARTER_DECK } from './cards'
+import { RUN, HEAL_FRACTION, type EncounterDef } from './run'
 import { decideEnemyMove } from './opponent'
 
 const HAND_SIZE = 5
 const PLAYER_MAX_HP = 50
-const ENEMY_MAX_HP = 80
 
 let uidCounter = 1
 function instantiate(key: string): Card {
@@ -48,7 +48,7 @@ function modified(base: number, attackerWeak: number, targetVuln: number): numbe
 }
 
 function makePlayer(seat: number): Combatant {
-  const c: Combatant = {
+  return {
     id: `seat-${seat}`,
     name: seat === 0 ? 'You' : `Player ${seat + 1}`,
     hp: PLAYER_MAX_HP,
@@ -58,22 +58,21 @@ function makePlayer(seat: number): Combatant {
     block: 0,
     vulnerable: 0,
     weak: 0,
-    deck: shuffle(STARTER_DECK.map(instantiate)),
+    collection: STARTER_DECK.map(instantiate),
+    deck: [],
     hand: [],
     discard: [],
     ended: false,
   }
-  drawInto(c, HAND_SIZE)
-  return c
 }
 
-function makeEnemy(i: number, seatCount: number): Enemy {
+function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
   const move = decideEnemyMove({ lastMove: null, hpRatio: 1 })
   return {
     id: `bot-${i}`,
-    name: 'THE MACHINE',
-    hp: ENEMY_MAX_HP,
-    maxHp: ENEMY_MAX_HP,
+    name: def.name,
+    hp: def.hp,
+    maxHp: def.hp,
     block: 0,
     vulnerable: 0,
     weak: 0,
@@ -83,38 +82,64 @@ function makeEnemy(i: number, seatCount: number): Enemy {
     lastMove: null,
     revealed: null,
     severedUntilRound: 0,
+    model: def.model,
   }
 }
 
-export function createInitialState(playerCount = 1, enemyCount = 1): GameState {
+// Configure the given trial: spin up its enemy and reset each living player's
+// combat state, rebuilding their deck from their persistent collection (so
+// exhausted cards like Sever return each fight).
+function setupEncounter(s: GameState, index: number): void {
+  s.encounter = index
+  const def = RUN[index]
+  s.enemies = def ? [makeEnemy(0, def, s.players.length)] : []
+  s.round = 1
+  s.calledThisRound = false
+  s.awaitingIntents = true
+  for (const p of s.players) {
+    if (p.hp <= 0) continue
+    p.block = 0
+    p.vulnerable = 0
+    p.weak = 0
+    p.energy = p.maxEnergy
+    p.ended = false
+    p.deck = shuffle([...p.collection])
+    p.hand = []
+    p.discard = []
+    drawInto(p, HAND_SIZE)
+  }
+}
+
+export function createInitialState(): GameState {
   uidCounter = 1
-  const players = Array.from({ length: playerCount }, (_, i) => makePlayer(i))
-  const enemies = Array.from({ length: enemyCount }, (_, i) =>
-    makeEnemy(i, playerCount),
-  )
-  return {
-    players,
-    enemies,
+  const state: GameState = {
+    players: [makePlayer(0)],
+    enemies: [],
     activeSeat: 0,
+    encounter: 0,
     round: 1,
     phase: 'player',
-    log: ['A new trial begins.'],
+    log: ['The longest day. The Machine is weakest now — strike.'],
     awaitingIntents: true,
     calledThisRound: false,
     reads: { caught: 0, falseAccusations: 0 },
   }
+  setupEncounter(state, 0)
+  return state
 }
 
 function clone(s: GameState): GameState {
   return {
     players: s.players.map((p) => ({
       ...p,
+      collection: [...p.collection],
       deck: [...p.deck],
       hand: [...p.hand],
       discard: [...p.discard],
     })),
     enemies: s.enemies.map((e) => ({ ...e, intent: { ...e.intent } })),
     activeSeat: s.activeSeat,
+    encounter: s.encounter,
     round: s.round,
     phase: s.phase,
     log: [...s.log],
@@ -152,8 +177,8 @@ function runEnemyPhase(s: GameState): void {
 
   if (s.players.every((p) => p.hp <= 0)) {
     s.players.forEach((p) => (p.hp = Math.max(0, p.hp)))
-    s.phase = 'lose'
-    logLine(s, 'The party has been deleted.')
+    s.phase = 'lost'
+    logLine(s, 'The long dark takes you.')
     return
   }
 
@@ -175,13 +200,6 @@ function runEnemyPhase(s: GameState): void {
       aliveSeats[Math.floor(Math.random() * aliveSeats.length)] ?? 0
   }
   s.awaitingIntents = true
-  for (const p of s.players) {
-    if (p.hp <= 0) continue
-    p.ended = false
-    p.block = 0
-    p.energy = p.maxEnergy
-    drawInto(p, HAND_SIZE)
-  }
 }
 
 export function reducer(state: GameState, action: Action): GameState {
@@ -229,8 +247,13 @@ export function reducer(state: GameState, action: Action): GameState {
 
       if (s.enemies.every((e) => e.hp <= 0)) {
         s.enemies.forEach((e) => (e.hp = Math.max(0, e.hp)))
-        s.phase = 'win'
-        logLine(s, 'The Machine halts.')
+        if (s.encounter >= RUN.length - 1) {
+          s.phase = 'won'
+          logLine(s, 'THE MAINFRAME goes dark. Dawn holds.')
+        } else {
+          s.phase = 'cleared'
+          logLine(s, `${s.enemies[ti]?.name ?? 'The Machine'} halts.`)
+        }
       }
       return s
     }
@@ -268,8 +291,8 @@ export function reducer(state: GameState, action: Action): GameState {
       const e = s.enemies[action.enemy]
       const me = s.players[s.activeSeat]
       if (!e || e.hp <= 0 || !me) return state
-      // Can't "read" a severed Machine — its link is cut, the move is known.
-      if (e.severedUntilRound >= s.round) return state
+      // No guess-check on a scripted-only gen-0 enemy, or a severed Machine.
+      if (!e.model || e.severedUntilRound >= s.round) return state
       s.calledThisRound = true
       e.revealed = e.intentSource
       if (e.intentSource === 'scripted') {
@@ -280,16 +303,28 @@ export function reducer(state: GameState, action: Action): GameState {
         s.reads.falseAccusations += 1
         dealDamage(me, 4)
         logLine(s, 'Wrong — that was the Machine thinking. -4 HP.')
-        if (s.players.every((p) => p.hp <= 0)) {
-          s.players.forEach((p) => (p.hp = Math.max(0, p.hp)))
-          s.phase = 'lose'
-          logLine(s, 'You have been deleted.')
+        if (s.players.every((pl) => pl.hp <= 0)) {
+          s.players.forEach((pl) => (pl.hp = Math.max(0, pl.hp)))
+          s.phase = 'lost'
+          logLine(s, 'The long dark takes you.')
         }
       }
       return s
     }
+    case 'CONTINUE': {
+      if (state.phase !== 'cleared') return state
+      const s = clone(state)
+      for (const p of s.players) {
+        if (p.hp <= 0) continue
+        p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * HEAL_FRACTION))
+      }
+      setupEncounter(s, s.encounter + 1)
+      s.phase = 'player'
+      logLine(s, `Trial ${s.encounter + 1}. A stronger mind awakens.`)
+      return s
+    }
     case 'RESTART':
-      return createInitialState(state.players.length, state.enemies.length)
+      return createInitialState()
     default:
       return state
   }

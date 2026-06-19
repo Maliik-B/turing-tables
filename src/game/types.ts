@@ -45,6 +45,9 @@ export interface Combatant {
   block: number
   vulnerable: number
   weak: number
+  // The persistent deck across the run (grows via rewards). Working piles
+  // below are rebuilt from this at the start of each trial.
+  collection: Card[]
   deck: Card[]
   hand: Card[]
   discard: Card[]
@@ -67,14 +70,18 @@ export interface Enemy {
   revealed: MoveSource | null
   // Rounds <= this are forced onto the scripted brain (Sever card). 0 = never.
   severedUntilRound: number
+  // Gemini model id for this enemy's brain; null = scripted only (generation 0).
+  model: string | null
 }
 
-export type Phase = 'player' | 'win' | 'lose'
+export type Phase = 'player' | 'cleared' | 'won' | 'lost'
 
 export interface GameState {
   players: Combatant[]
   enemies: Enemy[]
   activeSeat: number
+  // Index into RUN (0-based): which trial of the model ladder we're on.
+  encounter: number
   round: number
   phase: Phase
   log: string[]
@@ -90,4 +97,5 @@ export type Action =
   | { type: 'END_TURN'; seat: number }
   | { type: 'SET_INTENTS'; intents: { intent: Intent; source: MoveSource }[] }
   | { type: 'ACCUSE'; enemy: number }
+  | { type: 'CONTINUE' }
   | { type: 'RESTART' }

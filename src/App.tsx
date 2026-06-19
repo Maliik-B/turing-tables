@@ -36,6 +36,7 @@ function App() {
               { lastMove: e.lastMove, hpRatio: e.hp / e.maxHp },
               {
                 apiKey: apiKey || null,
+                model: e.model,
                 severed: e.severedUntilRound >= state.round,
               },
             ),
