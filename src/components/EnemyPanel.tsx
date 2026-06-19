@@ -12,12 +12,24 @@ export function EnemyPanel({
 }) {
   const dead = enemy.hp <= 0
   const severedLeft = Math.max(0, enemy.severedUntilRound - round + 1)
-  const shownAttack =
-    enemy.weak > 0 ? Math.floor(enemy.intent.value * 0.75) : enemy.intent.value
+  const it = enemy.intent
+  const shownAttack = enemy.weak > 0 ? Math.floor(it.value * 0.75) : it.value
   const intentText =
-    enemy.intent.type === 'attack'
+    it.type === 'attack'
       ? `Intends to attack for ${shownAttack}`
-      : `Intends to shield (+${enemy.intent.value})`
+      : it.type === 'drain'
+        ? `Intends to drain you for ${shownAttack}`
+        : it.type === 'block'
+          ? `Intends to shield (+${it.value})`
+          : it.type === 'weaken'
+            ? 'Intends to weaken you'
+            : 'Intends to expose you'
+  const intentColor =
+    it.type === 'attack' || it.type === 'drain'
+      ? 'text-red-300'
+      : it.type === 'block'
+        ? 'text-sky-300'
+        : 'text-amber-300'
   return (
     <div
       className={`group relative rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 ${
@@ -52,13 +64,7 @@ export function EnemyPanel({
           <p className="animate-pulse text-xs text-amber-300">Thinking…</p>
         ) : (
           <>
-            <p
-              className={`text-xs ${
-                enemy.intent.type === 'attack' ? 'text-red-300' : 'text-sky-300'
-              }`}
-            >
-              {intentText}
-            </p>
+            <p className={`text-xs ${intentColor}`}>{intentText}</p>
             {enemy.vulnerable > 0 && (
               <span className="rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300">
                 VULN {enemy.vulnerable}

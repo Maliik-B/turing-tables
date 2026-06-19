@@ -22,7 +22,7 @@ export interface Card extends CardDef {
   uid: number
 }
 
-export type IntentType = 'attack' | 'block'
+export type IntentType = 'attack' | 'block' | 'weaken' | 'expose' | 'drain'
 
 export interface Intent {
   type: IntentType
@@ -76,6 +76,8 @@ export interface Enemy {
   intel: string[]
   // The Mainframe: feed the player's cross-trial behavior into its prompt.
   remembers: boolean
+  // Signature moves beyond attack/block this generation can deploy.
+  abilities: IntentType[]
 }
 
 // Running tally of how the player has fought across the whole run — fed to the
