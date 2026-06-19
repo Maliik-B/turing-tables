@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from 'react'
 import { createInitialState, reducer } from './game/engine'
-import { decideMove } from './game/brain'
+import { decideMove, buildDossier } from './game/brain'
 import { BattleScreen } from './components/BattleScreen'
 
 const KEY_STORAGE = 'tt_gemini_key'
@@ -38,6 +38,9 @@ function App() {
                 apiKey: apiKey || null,
                 model: e.model,
                 severed: e.severedUntilRound >= state.round,
+                memory: e.remembers
+                  ? buildDossier(state.runStats)
+                  : undefined,
               },
             ),
           ),
@@ -51,20 +54,6 @@ function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.awaitingIntents, state.phase, state.round, apiKey])
-
-  // Auto-end the active player's turn when no playable cards remain (covers
-  // 0 energy, and energy-left-but-nothing-affordable; 0-cost-card aware).
-  useEffect(() => {
-    if (state.phase !== 'player' || state.awaitingIntents) return
-    const me = state.players[state.activeSeat]
-    if (!me || me.ended || me.hp <= 0) return
-    if (me.hand.some((c) => c.cost <= me.energy)) return
-    const t = setTimeout(
-      () => dispatch({ type: 'END_TURN', seat: state.activeSeat }),
-      700,
-    )
-    return () => clearTimeout(t)
-  }, [state])
 
   return (
     <div className="min-h-screen text-neutral-100">

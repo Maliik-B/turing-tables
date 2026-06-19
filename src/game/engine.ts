@@ -83,6 +83,8 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
     revealed: null,
     severedUntilRound: 0,
     model: def.model,
+    intel: def.intel,
+    remembers: !!def.remembers,
   }
 }
 
@@ -123,6 +125,15 @@ export function createInitialState(): GameState {
     awaitingIntents: true,
     calledThisRound: false,
     reads: { caught: 0, falseAccusations: 0 },
+    runStats: {
+      cardsPlayed: {},
+      attacks: 0,
+      skills: 0,
+      severs: 0,
+      accuses: 0,
+      damageDealt: 0,
+      blockGained: 0,
+    },
   }
   setupEncounter(state, 0)
   return state
@@ -146,6 +157,7 @@ function clone(s: GameState): GameState {
     awaitingIntents: s.awaitingIntents,
     calledThisRound: s.calledThisRound,
     reads: { ...s.reads },
+    runStats: { ...s.runStats, cardsPlayed: { ...s.runStats.cardsPlayed } },
   }
 }
 
@@ -228,10 +240,12 @@ export function reducer(state: GameState, action: Action): GameState {
       if (card.damage && enemy) {
         const amount = modified(card.damage, p.weak, enemy.vulnerable)
         dealDamage(enemy, amount)
+        s.runStats.damageDealt += amount
         logLine(s, `${p.name} plays ${card.name} → ${amount} dmg.`)
       }
       if (card.block) {
         p.block += card.block
+        s.runStats.blockGained += card.block
         logLine(s, `${p.name} plays ${card.name} (+${card.block} block).`)
       }
       if (card.draw) {
@@ -250,6 +264,13 @@ export function reducer(state: GameState, action: Action): GameState {
         enemy.severedUntilRound = s.round + card.sever
         logLine(s, `${p.name} plays ${card.name} — the Machine's link is severed.`)
       }
+      // Track the player's behavior across the run for the Mainframe's memory.
+      s.runStats.cardsPlayed[card.name] =
+        (s.runStats.cardsPlayed[card.name] ?? 0) + 1
+      if (card.type === 'attack') s.runStats.attacks += 1
+      else s.runStats.skills += 1
+      if (card.sever) s.runStats.severs += 1
+
       // Exhaust cards leave combat instead of going to the discard pile.
       if (!card.exhaust) p.discard.push(card)
 
@@ -302,6 +323,7 @@ export function reducer(state: GameState, action: Action): GameState {
       // No guess-check on a scripted-only gen-0 enemy, or a severed Machine.
       if (!e.model || e.severedUntilRound >= s.round) return state
       s.calledThisRound = true
+      s.runStats.accuses += 1
       e.revealed = e.intentSource
       if (e.intentSource === 'scripted') {
         s.reads.caught += 1

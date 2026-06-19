@@ -20,7 +20,7 @@ export function EnemyPanel({
       : `Intends to shield (+${enemy.intent.value})`
   return (
     <div
-      className={`rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 ${
+      className={`group relative rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 ${
         dead ? 'opacity-40' : ''
       }`}
     >
@@ -83,6 +83,18 @@ export function EnemyPanel({
           </>
         )}
       </div>
+      {!dead && enemy.intel.length > 0 && (
+        <div className="pointer-events-none absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-neutral-700 bg-neutral-950/95 p-3 text-left opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
+          <p className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400/70">
+            Intel
+          </p>
+          <ul className="space-y-1 text-[11px] leading-snug text-neutral-300">
+            {enemy.intel.map((line, i) => (
+              <li key={i}>· {line}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

@@ -12,21 +12,27 @@ Play to win. Be unpredictable but coherent — a human should sense a mind behin
 // Calls Gemini (the given model) for the Machine's next move. Returns null on
 // ANY failure (no key, network, timeout, bad JSON) so the orchestrator falls
 // back to the scripted brain. The game must never freeze on this call.
+// `memory`, when present, is a dossier of the player's prior-trial behavior
+// (the Mainframe's memory mechanic) injected into the prompt.
 export async function geminiDecideMove(
   ctx: BrainContext,
   apiKey: string,
   model: string,
+  memory?: string,
 ): Promise<EnemyMove | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
-    const userState = `Your HP is ${Math.round(
-      ctx.hpRatio * 100,
-    )}% of maximum. Your previous move was: ${ctx.lastMove ?? 'none'}. Choose your next move.`
+    const lines = [
+      `Your HP is ${Math.round(ctx.hpRatio * 100)}% of maximum.`,
+      `Your previous move was: ${ctx.lastMove ?? 'none'}.`,
+    ]
+    if (memory) lines.push(`Intel on this human from earlier trials: ${memory}`)
+    lines.push('Choose your next move.')
 
     const body = {
       systemInstruction: { parts: [{ text: SYSTEM }] },
-      contents: [{ role: 'user', parts: [{ text: userState }] }],
+      contents: [{ role: 'user', parts: [{ text: lines.join(' ') }] }],
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
