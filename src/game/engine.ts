@@ -72,7 +72,11 @@ function makePlayer(seat: number): Combatant {
 }
 
 function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
-  const move = decideEnemyMove({ lastMove: null, hpRatio: 1 })
+  const move = decideEnemyMove({
+    lastMove: null,
+    hpRatio: 1,
+    abilities: def.abilities,
+  })
   return {
     id: `bot-${i}`,
     name: def.name,
@@ -90,6 +94,7 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
     model: def.model,
     intel: def.intel,
     remembers: !!def.remembers,
+    abilities: def.abilities,
   }
 }
 
@@ -183,15 +188,28 @@ function runEnemyPhase(s: GameState): void {
     e.block = 0
     const target = s.players[e.targetSeat] ?? s.players.find((p) => p.hp > 0)
     if (!target) continue
-    if (e.intent.type === 'attack') {
-      const amount = modified(e.intent.value, e.weak, target.vulnerable)
+    const it = e.intent
+    if (it.type === 'attack' || it.type === 'drain') {
+      const amount = modified(it.value, e.weak, target.vulnerable)
       dealDamage(target, amount)
-      logLine(s, `${e.name} attacks ${target.name} for ${amount}.`)
-    } else {
-      e.block += e.intent.value
-      logLine(s, `${e.name} shields (+${e.intent.value}).`)
+      if (it.type === 'drain') {
+        const healed = Math.floor(amount / 2)
+        e.hp = Math.min(e.maxHp, e.hp + healed)
+        logLine(s, `${e.name} drains ${target.name} for ${amount}, healing ${healed}.`)
+      } else {
+        logLine(s, `${e.name} attacks ${target.name} for ${amount}.`)
+      }
+    } else if (it.type === 'block') {
+      e.block += it.value
+      logLine(s, `${e.name} shields (+${it.value}).`)
+    } else if (it.type === 'weaken') {
+      target.weak += it.value
+      logLine(s, `${e.name} weakens ${target.name} (+${it.value} Weak).`)
+    } else if (it.type === 'expose') {
+      target.vulnerable += it.value
+      logLine(s, `${e.name} exposes ${target.name} (+${it.value} Vulnerable).`)
     }
-    e.lastMove = e.intent.type
+    e.lastMove = it.type
   }
 
   if (s.players.every((p) => p.hp <= 0)) {

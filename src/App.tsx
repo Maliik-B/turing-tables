@@ -39,7 +39,11 @@ function App() {
         Promise.all(
           alive.map((e) =>
             decideMove(
-              { lastMove: e.lastMove, hpRatio: e.hp / e.maxHp },
+              {
+                lastMove: e.lastMove,
+                hpRatio: e.hp / e.maxHp,
+                abilities: e.abilities,
+              },
               {
                 apiKey: apiKey || null,
                 model: e.model,
