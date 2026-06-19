@@ -1,7 +1,7 @@
 import type { Dispatch } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Action, GameState } from '../game/types'
-import { RUN } from '../game/run'
+import { RUN, modelLabel } from '../game/run'
 import { EnemyPanel } from './EnemyPanel'
 import { PlayerPanel } from './PlayerPanel'
 import { CardView } from './CardView'
@@ -61,7 +61,7 @@ export function BattleScreen({
               : 'bg-neutral-800 text-neutral-400'
           }`}
         >
-          Machine: {curIsGemini ? 'Gemini' : 'Scripted'}
+          Machine: {curIsGemini ? modelLabel(cur?.model) : 'Scripted'}
         </span>
         <input
           type="password"
@@ -71,6 +71,12 @@ export function BattleScreen({
           className="flex-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 font-mono text-neutral-300 placeholder:text-neutral-600 focus:border-amber-500/50 focus:outline-none"
         />
       </div>
+      {apiKey && cur && !cur.model && (
+        <p className="-mt-2 font-mono text-[10px] leading-snug text-neutral-500">
+          Key active. ELIZA-0 is a rule-based automaton; the real Gemini machine
+          wakes at DAEMON-1.
+        </p>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {enemies.map((e) => (

@@ -67,3 +67,19 @@ export const RUN: EncounterDef[] = [
 
 // Fraction of max HP recovered between trials.
 export const HEAL_FRACTION = 0.3
+
+// Friendly display name for a model id, shown on the "Machine:" chip so a judge
+// who never reaches Trial 4 still sees the escalating Flash-Lite -> Flash -> Pro
+// ladder. Falls back to a generic label for any unmapped id.
+export function modelLabel(model: string | null | undefined): string {
+  switch (model) {
+    case 'gemini-2.5-flash-lite':
+      return 'Gemini 2.5 Flash-Lite'
+    case 'gemini-2.5-flash':
+      return 'Gemini 2.5 Flash'
+    case 'gemini-2.5-pro':
+      return 'Gemini 2.5 Pro'
+    default:
+      return 'Gemini'
+  }
+}
