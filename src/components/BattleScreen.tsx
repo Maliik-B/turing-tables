@@ -1,6 +1,7 @@
 import type { Dispatch } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Action, GameState } from '../game/types'
+import { RUN } from '../game/run'
 import { EnemyPanel } from './EnemyPanel'
 import { PlayerPanel } from './PlayerPanel'
 import { CardView } from './CardView'
@@ -20,6 +21,7 @@ export function BattleScreen({
     enemies,
     players,
     activeSeat,
+    encounter,
     phase,
     round,
     log,
@@ -28,10 +30,13 @@ export function BattleScreen({
     reads,
   } = state
   const me = players[activeSeat]
-  const over = phase === 'win' || phase === 'lose'
+  const total = RUN.length
+  const over = phase === 'won' || phase === 'lost'
+  const cleared = phase === 'cleared'
   const aliveEnemy = enemies.findIndex((e) => e.hp > 0)
-  const targetSevered =
-    aliveEnemy >= 0 && (enemies[aliveEnemy]?.severedUntilRound ?? 0) >= round
+  const cur = aliveEnemy >= 0 ? enemies[aliveEnemy] : undefined
+  const curIsGemini = !!apiKey && !!cur?.model
+  const targetSevered = !!cur && cur.severedUntilRound >= round
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-5">
@@ -49,7 +54,9 @@ export function BattleScreen({
         <span className="font-mono text-xs uppercase tracking-[0.3em] text-amber-500/70">
           Turing Tables
         </span>
-        <span className="font-mono text-xs text-neutral-500">Round {round}</span>
+        <span className="font-mono text-xs text-neutral-500">
+          Trial {Math.min(encounter + 1, total)}/{total} · Round {round}
+        </span>
       </header>
       <p className="-mt-1 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-amber-200/40">
         the longest day · hold the light until dawn
@@ -58,12 +65,12 @@ export function BattleScreen({
       <div className="flex items-center gap-2 text-xs">
         <span
           className={`rounded px-2 py-0.5 font-mono ${
-            apiKey
+            curIsGemini
               ? 'bg-emerald-500/15 text-emerald-300'
               : 'bg-neutral-800 text-neutral-400'
           }`}
         >
-          Machine: {apiKey ? 'Gemini' : 'Scripted'}
+          Machine: {curIsGemini ? 'Gemini' : 'Scripted'}
         </span>
         <input
           type="password"
@@ -90,21 +97,6 @@ export function BattleScreen({
       </div>
 
       <div className="mt-auto flex flex-col gap-3">
-        {players.length > 1 && (
-          <div className="flex flex-wrap gap-2">
-            {players.map((p, i) =>
-              i === activeSeat ? null : (
-                <span
-                  key={p.id}
-                  className="rounded bg-neutral-800 px-2 py-1 font-mono text-[11px] text-neutral-400"
-                >
-                  {p.name} {Math.max(0, p.hp)}hp {p.ended ? '✓' : '…'}
-                </span>
-              ),
-            )}
-          </div>
-        )}
-
         {me && (
           <>
             <PlayerPanel player={me} />
@@ -124,7 +116,6 @@ export function BattleScreen({
                       playable={
                         phase === 'player' &&
                         !me.ended &&
-                        !over &&
                         !awaitingIntents &&
                         card.cost <= me.energy
                       }
@@ -146,16 +137,16 @@ export function BattleScreen({
                 Deck {me.deck.length} · Discard {me.discard.length}
               </span>
               <div className="flex items-center gap-2">
-                {apiKey && (
+                {curIsGemini && (
                   <button
                     type="button"
                     title="Accuse the Machine's telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: -4 HP."
                     disabled={
-                      over ||
+                      phase !== 'player' ||
                       awaitingIntents ||
                       calledThisRound ||
-                      aliveEnemy < 0 ||
-                      targetSevered
+                      targetSevered ||
+                      aliveEnemy < 0
                     }
                     onClick={() =>
                       dispatch({ type: 'ACCUSE', enemy: aliveEnemy })
@@ -167,7 +158,7 @@ export function BattleScreen({
                 )}
                 <button
                   type="button"
-                  disabled={over || me.ended || awaitingIntents}
+                  disabled={phase !== 'player' || me.ended || awaitingIntents}
                   onClick={() =>
                     dispatch({ type: 'END_TURN', seat: activeSeat })
                   }
@@ -182,6 +173,28 @@ export function BattleScreen({
       </div>
 
       <AnimatePresence>
+        {cleared && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-neutral-950/85 px-6 text-center backdrop-blur"
+          >
+            <h2 className="text-3xl font-bold text-emerald-400">
+              Trial {encounter + 1} cleared.
+            </h2>
+            <p className="max-w-sm text-sm text-neutral-400">
+              The light holds. You recover and press deeper — a stronger mind
+              waits in Trial {encounter + 2} of {total}.
+            </p>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'CONTINUE' })}
+              className="mt-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-6 py-2 font-semibold text-amber-300 hover:bg-amber-500/20"
+            >
+              Press On
+            </button>
+          </motion.div>
+        )}
         {over && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -190,11 +203,11 @@ export function BattleScreen({
           >
             <h2
               className={`text-4xl font-bold ${
-                phase === 'win' ? 'text-emerald-400' : 'text-red-400'
+                phase === 'won' ? 'text-amber-300' : 'text-red-400'
               }`}
             >
-              {phase === 'win'
-                ? 'Dawn breaks. The Machine halts.'
+              {phase === 'won'
+                ? 'Dawn breaks. The Mainframe goes dark.'
                 : 'The long dark takes you.'}
             </h2>
             {apiKey && reads.caught + reads.falseAccusations > 0 && (

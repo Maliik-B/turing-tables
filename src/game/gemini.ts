@@ -1,9 +1,7 @@
 import type { BrainContext, EnemyMove } from './opponent'
 
-// Confirmed free-tier model (Google AI Studio). Swap to gemini-2.5-pro for a
-// sharper opponent (also free, lower RPM) or a newer flash when available.
-const MODEL = 'gemini-2.5-flash'
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
+const ENDPOINT = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 const TIMEOUT_MS = 8000
 
 const SYSTEM = `You are THE MACHINE, a coldly tactical AI opponent in a one-on-one card duel against a human. Each turn you choose ONE move.
@@ -11,12 +9,13 @@ const SYSTEM = `You are THE MACHINE, a coldly tactical AI opponent in a one-on-o
 - "block": shield yourself (value 8). Never block twice in a row, and never block when your HP is low — press the advantage instead.
 Play to win. Be unpredictable but coherent — a human should sense a mind behind the moves.`
 
-// Calls Gemini for the Machine's next move. Returns null on ANY failure
-// (no key, network, timeout, bad JSON) so the orchestrator falls back to
-// the scripted brain. The game must never freeze on this call.
+// Calls Gemini (the given model) for the Machine's next move. Returns null on
+// ANY failure (no key, network, timeout, bad JSON) so the orchestrator falls
+// back to the scripted brain. The game must never freeze on this call.
 export async function geminiDecideMove(
   ctx: BrainContext,
   apiKey: string,
+  model: string,
 ): Promise<EnemyMove | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
@@ -43,7 +42,7 @@ export async function geminiDecideMove(
       },
     }
 
-    const res = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+    const res = await fetch(`${ENDPOINT(model)}?key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

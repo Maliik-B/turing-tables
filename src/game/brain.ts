@@ -4,13 +4,15 @@ import { geminiDecideMove } from './gemini'
 
 export interface BrainOptions {
   apiKey?: string | null
-  // The "Sever" card forces the scripted brain for a few turns (wired later).
+  // The Gemini model id for this enemy; null/undefined = scripted only (gen-0).
+  model?: string | null
+  // The "Sever" card forces the scripted brain for a few turns.
   severed?: boolean
 }
 
-// Share of turns the real Gemini brain plays when a key is present and the
-// Machine isn't Severed. The rest are the scripted "imitation", mixed in
-// unpredictably so the guess-check is a genuine test, not a constant answer.
+// Share of turns the real Gemini brain plays when it's available (a keyed,
+// Gemini-tier enemy that isn't Severed). The rest are the scripted "imitation",
+// mixed in unpredictably so the guess-check is a genuine test.
 const GEMINI_SHARE = 0.7
 
 export async function decideMove(
@@ -18,10 +20,17 @@ export async function decideMove(
   opts: BrainOptions = {},
 ): Promise<EnemyMove> {
   const tryGemini =
-    !!opts.apiKey && !opts.severed && Math.random() < GEMINI_SHARE
+    !!opts.apiKey &&
+    !!opts.model &&
+    !opts.severed &&
+    Math.random() < GEMINI_SHARE
   if (tryGemini) {
     try {
-      const move = await geminiDecideMove(ctx, opts.apiKey as string)
+      const move = await geminiDecideMove(
+        ctx,
+        opts.apiKey as string,
+        opts.model as string,
+      )
       if (move) return move
     } catch {
       // fall through to scripted
