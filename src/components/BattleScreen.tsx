@@ -1,4 +1,4 @@
-import type { Dispatch } from 'react'
+import { useEffect, type Dispatch } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Action, GameState } from '../game/types'
 import { RUN, modelLabel } from '../game/run'
@@ -40,6 +40,67 @@ export function BattleScreen({
   const cur = aliveEnemy >= 0 ? enemies[aliveEnemy] : undefined
   const curIsGemini = !!apiKey && !!cur?.model
   const targetSevered = !!cur && cur.severedUntilRound >= round
+
+  // Full keyboard control so the game is playable without precise taps:
+  //   1-9 play the card in that slot · E end turn · C call imitation
+  //   reward screen: 1-3 pick a card, S/0 skip · over screen: R restart
+  // Ignored while a text input is focused (so typing an API key is safe).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
+      const k = e.key.toLowerCase()
+
+      if (cleared) {
+        if (e.key >= '1' && e.key <= String(rewardChoices.length)) {
+          const card = rewardChoices[Number(e.key) - 1]
+          if (card) dispatch({ type: 'CHOOSE_REWARD', uid: card.uid })
+        } else if (k === 's' || e.key === '0') {
+          dispatch({ type: 'CHOOSE_REWARD', uid: null })
+        }
+        return
+      }
+      if (over) {
+        if (k === 'r' || e.key === 'Enter') dispatch({ type: 'RESTART' })
+        return
+      }
+      if (phase !== 'player' || awaitingIntents || !me || me.ended) return
+
+      if (e.key >= '1' && e.key <= '9') {
+        const card = me.hand[Number(e.key) - 1]
+        if (card && card.cost <= me.energy) {
+          dispatch({ type: 'PLAY_CARD', seat: activeSeat, uid: card.uid })
+        }
+        return
+      }
+      if (k === 'e') {
+        dispatch({ type: 'END_TURN', seat: activeSeat })
+      } else if (
+        k === 'c' &&
+        curIsGemini &&
+        !calledThisRound &&
+        !targetSevered &&
+        aliveEnemy >= 0
+      ) {
+        dispatch({ type: 'ACCUSE', enemy: aliveEnemy })
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [
+    phase,
+    awaitingIntents,
+    me,
+    cleared,
+    over,
+    rewardChoices,
+    curIsGemini,
+    calledThisRound,
+    targetSevered,
+    aliveEnemy,
+    activeSeat,
+    dispatch,
+  ])
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-5">
@@ -150,9 +211,14 @@ export function BattleScreen({
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-neutral-500">
-                Deck {me.deck.length} · Discard {me.discard.length}
-              </span>
+              <div className="flex flex-col font-mono text-xs text-neutral-500">
+                <span>
+                  Deck {me.deck.length} · Discard {me.discard.length}
+                </span>
+                <span className="text-[10px] text-neutral-600">
+                  1-5 play · E end · C call
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 {curIsGemini && (
                   <button

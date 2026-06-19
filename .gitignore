@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Local-only design/working notes
+DESIGN.md
+.playwright-mcp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
