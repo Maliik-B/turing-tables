@@ -5,6 +5,7 @@ import { RUN, modelLabel } from '../game/run'
 import { EnemyPanel } from './EnemyPanel'
 import { PlayerPanel } from './PlayerPanel'
 import { CardView } from './CardView'
+import { DossierPanel } from './DossierPanel'
 
 export function BattleScreen({
   state,
@@ -29,6 +30,7 @@ export function BattleScreen({
     calledThisRound,
     reads,
     rewardChoices,
+    runStats,
   } = state
   const me = players[activeSeat]
   const total = RUN.length
@@ -88,6 +90,8 @@ export function BattleScreen({
           />
         ))}
       </div>
+
+      <DossierPanel stats={runStats} active={!!cur?.remembers} />
 
       <div className="h-24 space-y-0.5 overflow-y-auto rounded-lg border border-neutral-800/60 bg-neutral-900/40 px-4 py-2 text-xs">
         {awaitingIntents && (
