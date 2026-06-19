@@ -1,4 +1,15 @@
+import { useEffect } from 'react'
+
 export function IntroScroll({ onContinue }: { onContinue: () => void }) {
+  // Enter / Space descends into the fight (keyboard-first play).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') onContinue()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onContinue])
+
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-7 px-6">
       <div className="space-y-4 text-center leading-relaxed text-neutral-300">

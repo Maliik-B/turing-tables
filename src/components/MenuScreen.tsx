@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 export function MenuScreen({
   apiKey,
   onApiKey,
@@ -7,6 +9,15 @@ export function MenuScreen({
   onApiKey: (key: string) => void
   onBegin: () => void
 }) {
+  // Enter begins the run (keyboard-first play).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') onBegin()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onBegin])
+
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">
       <p className="font-mono text-xs uppercase tracking-[0.35em] text-amber-200/50">
