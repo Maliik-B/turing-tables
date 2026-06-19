@@ -38,10 +38,17 @@ export function MenuScreen({
           placeholder="paste a free Google AI Studio key to face the real machine"
           className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-300 placeholder:text-neutral-600 focus:border-amber-500/50 focus:outline-none"
         />
-        <p className="mt-1.5 text-left text-[11px] leading-snug text-neutral-600">
-          Without a key the machines run a scripted brain. With one, ~70% of
-          their moves are real Gemini — and you can hunt the fakes.
-        </p>
+        {apiKey ? (
+          <p className="mt-1.5 text-left text-[11px] leading-snug text-emerald-400/80">
+            ✓ Key active. ELIZA-0 is scripted by design; the real Gemini machine
+            wakes at DAEMON-1, then sharpens each trial up to the Mainframe.
+          </p>
+        ) : (
+          <p className="mt-1.5 text-left text-[11px] leading-snug text-neutral-600">
+            Without a key the machines run a scripted brain. With one, ~70% of
+            their moves are real Gemini, and you can hunt the fakes.
+          </p>
+        )}
       </div>
     </div>
   )
