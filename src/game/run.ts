@@ -60,6 +60,7 @@ export const RUN: EncounterDef[] = [
     intel: [
       'Strikes for 8–14 · Shields for ~8',
       'Drains your life to heal itself',
+      'Resists corruption — your DoT takes hold at half strength',
       'Runs Gemini Pro and has studied your prior trials — it adapts to you.',
     ],
   },

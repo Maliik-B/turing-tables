@@ -64,6 +64,8 @@ function makePlayer(seat: number): Combatant {
     retainBlock: 0,
     vulnerable: 0,
     weak: 0,
+    power: 0,
+    powerTurns: 0,
     collection: STARTER_DECK.map(instantiate),
     deck: [],
     hand: [],
@@ -116,6 +118,8 @@ function setupEncounter(s: GameState, index: number): void {
     p.retainBlock = 0
     p.vulnerable = 0
     p.weak = 0
+    p.power = 0
+    p.powerTurns = 0
     p.energy = p.maxEnergy
     p.ended = false
     p.deck = shuffle([...p.collection])
@@ -276,6 +280,10 @@ function runEnemyPhase(s: GameState): void {
     p.block = retained
     s.runStats.blockGained += retained
     p.retainBlock = 0
+    if ((p.powerTurns ?? 0) > 0) {
+      p.powerTurns -= 1
+      if (p.powerTurns === 0) p.power = 0
+    }
     p.energy = p.maxEnergy
     drawInto(p, HAND_SIZE)
   }
@@ -298,7 +306,11 @@ export function reducer(state: GameState, action: Action): GameState {
       const enemy = s.enemies[ti]
 
       if (card.damage && enemy) {
-        const amount = modified(card.damage, p.weak, enemy.vulnerable)
+        const amount = modified(
+          card.damage + (p.power ?? 0),
+          p.weak,
+          enemy.vulnerable,
+        )
         dealDamage(enemy, amount)
         s.runStats.damageDealt += amount
         logLine(s, `${p.name} plays ${card.name} → ${amount} dmg.`)
@@ -329,8 +341,25 @@ export function reducer(state: GameState, action: Action): GameState {
         logLine(s, `${p.name} plays ${card.name} — the Machine's link is severed.`)
       }
       if (card.corruption && enemy) {
-        enemy.corruption += card.corruption
-        logLine(s, `${p.name} plays ${card.name} (+${card.corruption} Corruption).`)
+        // The Mainframe has studied you: corruption takes hold at half strength.
+        const applied = enemy.remembers
+          ? Math.ceil(card.corruption / 2)
+          : card.corruption
+        enemy.corruption += applied
+        logLine(
+          s,
+          enemy.remembers
+            ? `${p.name} plays ${card.name}, but the Mainframe resists (+${applied} Corruption).`
+            : `${p.name} plays ${card.name} (+${applied} Corruption).`,
+        )
+      }
+      if (card.power) {
+        p.power += card.power
+        p.powerTurns = Math.max(p.powerTurns ?? 0, card.powerTurns ?? 0)
+        logLine(
+          s,
+          `${p.name} plays ${card.name} (+${card.power} attack damage for ${card.powerTurns} turns).`,
+        )
       }
       // Track the player's behavior across the run for the Mainframe's memory.
       s.runStats.cardsPlayed[card.name] =
@@ -388,6 +417,15 @@ export function reducer(state: GameState, action: Action): GameState {
         s.reads.caught += 1
         me.energy += 1
         logLine(s, 'Imitation exposed — the Machine was faking. +1 energy.')
+        const returned = me.discard.filter((c) => c.recur)
+        if (returned.length > 0) {
+          me.discard = me.discard.filter((c) => !c.recur)
+          me.hand.push(...returned)
+          logLine(
+            s,
+            `${returned.map((c) => c.name).join(', ')} loops back to your hand.`,
+          )
+        }
       } else {
         s.reads.falseAccusations += 1
         dealDamage(me, 4)

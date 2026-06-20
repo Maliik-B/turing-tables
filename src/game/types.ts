@@ -18,6 +18,11 @@ export interface CardDef {
   // "Retain": block delivered at the start of the player's NEXT turn (lingering
   // defense, so you aren't re-blocking from scratch every round).
   retain?: number
+  // "Recur": returns to the player's hand when they correctly Call an Imitation.
+  recur?: boolean
+  // Temporary attack buff: +power damage per attack for powerTurns turns.
+  power?: number
+  powerTurns?: number
   // Removed from the deck for the rest of the combat after being played.
   exhaust?: boolean
 }
@@ -52,6 +57,9 @@ export interface Combatant {
   retainBlock: number
   vulnerable: number
   weak: number
+  // Temporary flat attack bonus (Overdrive) and how many turns it lasts.
+  power: number
+  powerTurns: number
   // The persistent deck across the run (grows via rewards). Working piles
   // below are rebuilt from this at the start of each trial.
   collection: Card[]
