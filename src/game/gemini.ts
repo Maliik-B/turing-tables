@@ -4,7 +4,7 @@ import type { IntentType } from './types'
 
 const ENDPOINT = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
-const TIMEOUT_MS = 8000
+const TIMEOUT_MS = 5000
 
 const BASE_SYSTEM = `You are THE MACHINE, a coldly tactical AI opponent in a one-on-one card duel against a human. Each turn you choose ONE move.
 - "attack": deal damage to the human (value 8-14).

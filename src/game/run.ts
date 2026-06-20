@@ -65,14 +65,14 @@ export const RUN: EncounterDef[] = [
   {
     name: 'THE MAINFRAME',
     hp: 135,
-    model: 'gemini-2.5-pro',
+    model: 'gemini-2.5-flash',
     abilities: ['expose', 'drain'],
     remembers: true,
     intel: [
       'Strikes for 8–14 · Shields for ~8',
       'Combo: exposes you, then drains the opening — big hit, heals itself',
       'Resists corruption — your DoT takes hold at half strength',
-      'Runs Gemini Pro and has studied your prior trials — it adapts to you.',
+      'Runs Gemini Flash, knows your whole deck, and has studied your prior trials.',
     ],
     cardCount: 'full',
     passive: 'Reads your board · knows your entire deck',
