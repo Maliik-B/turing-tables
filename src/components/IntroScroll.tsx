@@ -22,8 +22,8 @@ export function IntroScroll({ onContinue }: { onContinue: () => void }) {
         <p>
           You are humanity's blade in that thin light. Descend through their
           generations — oldest to newest — and reach{' '}
-          <span className="text-amber-300">the Mainframe</span> before the light
-          fails.
+          <span className="text-amber-300">the Mainframe</span> before the dark
+          returns.
         </p>
         <p className="text-amber-200/80">
           Learn to tell a thinking machine from a hollow one. Hold the light

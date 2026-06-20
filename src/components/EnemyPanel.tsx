@@ -6,14 +6,18 @@ export function EnemyPanel({
   thinking,
   round,
   gemini,
+  confidence,
 }: {
   enemy: Enemy
   thinking: boolean
   round: number
   // True when this enemy is currently running the Gemini brain (a key is set).
   gemini: boolean
+  // Dynamic card-counting confidence phrase (Gemini tiers), or null.
+  confidence: string | null
 }) {
   const dead = enemy.hp <= 0
+  const enraged = !dead && enemy.hp / enemy.maxHp <= 0.35
   const severedLeft = Math.max(0, enemy.severedUntilRound - round + 1)
   const it = enemy.intent
   const shownAttack = enemy.weak > 0 ? Math.floor(it.value * 0.75) : it.value
@@ -21,7 +25,7 @@ export function EnemyPanel({
     it.type === 'attack'
       ? `Intends to attack for ${shownAttack}`
       : it.type === 'drain'
-        ? `Intends to drain you for ${shownAttack}`
+        ? `Intends to drain you for ${shownAttack} (heals itself)`
         : it.type === 'block'
           ? `Intends to shield (+${it.value})`
           : it.type === 'weaken'
@@ -49,6 +53,14 @@ export function EnemyPanel({
               SEVERED {severedLeft}
             </span>
           )}
+          {enraged && (
+            <span
+              title="Enraged: this machine hits harder while wounded (below 35% HP)."
+              className="rounded bg-orange-600/30 px-1.5 py-0.5 text-[10px] font-semibold text-orange-300"
+            >
+              ENRAGED
+            </span>
+          )}
           {enemy.block > 0 && (
             <span className="rounded bg-sky-500/20 px-2 py-0.5 text-xs text-sky-300">
               🛡 {enemy.block}
@@ -69,8 +81,11 @@ export function EnemyPanel({
       </div>
       <StatBar value={enemy.hp} max={enemy.maxHp} className="bg-red-500" />
       {gemini && !dead && enemy.passive && (
-        <p className="mt-1.5 flex items-center gap-1 font-mono text-[10px] text-emerald-300/80">
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-1 font-mono text-[10px] text-emerald-300/80">
           <span aria-hidden>◈</span> Passive: {enemy.passive}
+          {confidence && (
+            <span className="text-amber-300/90">· read: {confidence}</span>
+          )}
         </p>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-2">

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { createInitialState, reducer } from './game/engine'
 import { decideMove, buildDossier } from './game/brain'
 import { BattleScreen } from './components/BattleScreen'
@@ -6,6 +6,7 @@ import { MenuScreen } from './components/MenuScreen'
 import { IntroScroll } from './components/IntroScroll'
 
 const KEY_STORAGE = 'tt_gemini_key'
+const RECORD_STORAGE = 'tt_record'
 
 type Screen = 'menu' | 'intro' | 'game'
 
@@ -23,6 +24,39 @@ function App() {
     if (k) localStorage.setItem(KEY_STORAGE, k)
     else localStorage.removeItem(KEY_STORAGE)
   }
+
+  const [record, setRecord] = useState<{ wins: number; losses: number }>(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(RECORD_STORAGE) ?? 'null')
+      return parsed && typeof parsed.wins === 'number'
+        ? parsed
+        : { wins: 0, losses: 0 }
+    } catch {
+      return { wins: 0, losses: 0 }
+    }
+  })
+  const recordedRef = useRef(false)
+  // Tally each finished run once; wins/losses persist across sessions.
+  useEffect(() => {
+    if (state.phase === 'won' || state.phase === 'lost') {
+      if (recordedRef.current) return
+      recordedRef.current = true
+      setRecord((r) => {
+        const next = {
+          wins: r.wins + (state.phase === 'won' ? 1 : 0),
+          losses: r.losses + (state.phase === 'lost' ? 1 : 0),
+        }
+        try {
+          localStorage.setItem(RECORD_STORAGE, JSON.stringify(next))
+        } catch {
+          // ignore storage failures
+        }
+        return next
+      })
+    } else {
+      recordedRef.current = false
+    }
+  }, [state.phase])
 
   // Resolve the Machine's next intent asynchronously (Gemini -> scripted
   // fallback) once we're in a fight. A randomized "thinking" delay (with a key)
@@ -106,6 +140,7 @@ function App() {
           apiKey={apiKey}
           onApiKey={updateKey}
           onBegin={() => setScreen('intro')}
+          record={record}
         />
       )}
       {screen === 'intro' && <IntroScroll onContinue={() => setScreen('game')} />}
@@ -115,6 +150,7 @@ function App() {
           dispatch={dispatch}
           apiKey={apiKey}
           onApiKey={updateKey}
+          record={record}
         />
       )}
     </div>
