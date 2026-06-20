@@ -4,6 +4,7 @@ import { decideMove, buildDossier } from './game/brain'
 import { BattleScreen } from './components/BattleScreen'
 import { MenuScreen } from './components/MenuScreen'
 import { IntroScroll } from './components/IntroScroll'
+import { Backdrop } from './components/Backdrop'
 
 const KEY_STORAGE = 'tt_gemini_key'
 const RECORD_STORAGE = 'tt_record'
@@ -156,6 +157,8 @@ function App() {
               }) 45%, transparent 78%)`,
         }}
       />
+      {/* Stars, ruined-grid horizon, drifting fog, grain — atmosphere. */}
+      <Backdrop warmth={warmth} lost={lost} />
       {screen === 'menu' && (
         <MenuScreen
           apiKey={apiKey}
