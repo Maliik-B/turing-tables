@@ -85,6 +85,7 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
     block: 0,
     vulnerable: 0,
     weak: 0,
+    corruption: 0,
     intent: move.intent,
     intentSource: move.source,
     targetSeat: i % Math.max(1, seatCount),
@@ -181,8 +182,35 @@ function firstAliveEnemy(s: GameState): number {
   return s.enemies.findIndex((e) => e.hp > 0)
 }
 
+// If every enemy is down, transition to cleared (reward) or won and return true
+// so the caller stops. Shared by direct card damage and corruption ticks.
+function resolveIfCleared(s: GameState, haltName?: string): boolean {
+  if (s.enemies.length === 0 || !s.enemies.every((e) => e.hp <= 0)) return false
+  s.enemies.forEach((e) => (e.hp = Math.max(0, e.hp)))
+  if (s.encounter >= RUN.length - 1) {
+    s.phase = 'won'
+    logLine(s, 'THE MAINFRAME goes dark. Dawn holds.')
+  } else {
+    s.phase = 'cleared'
+    s.rewardChoices = rollRewards()
+    logLine(s, `${haltName ?? 'The Machine'} halts.`)
+  }
+  return true
+}
+
 // All living seats have ended -> the machines act, then a new round begins.
 function runEnemyPhase(s: GameState): void {
+  // Corruption bites first: it ignores block and can finish a machine before it
+  // acts, then wanes by 1. (DoT resolves at the start of the enemy phase.)
+  for (const e of s.enemies) {
+    if (e.hp <= 0 || e.corruption <= 0) continue
+    e.hp -= e.corruption
+    s.runStats.damageDealt += e.corruption
+    logLine(s, `Corruption eats ${e.name} for ${e.corruption}.`)
+    e.corruption -= 1
+  }
+  if (resolveIfCleared(s)) return
+
   for (const e of s.enemies) {
     if (e.hp <= 0) continue
     e.block = 0
@@ -289,6 +317,10 @@ export function reducer(state: GameState, action: Action): GameState {
         enemy.severedUntilRound = s.round + card.sever
         logLine(s, `${p.name} plays ${card.name} — the Machine's link is severed.`)
       }
+      if (card.corruption && enemy) {
+        enemy.corruption += card.corruption
+        logLine(s, `${p.name} plays ${card.name} (+${card.corruption} Corruption).`)
+      }
       // Track the player's behavior across the run for the Mainframe's memory.
       s.runStats.cardsPlayed[card.name] =
         (s.runStats.cardsPlayed[card.name] ?? 0) + 1
@@ -299,17 +331,7 @@ export function reducer(state: GameState, action: Action): GameState {
       // Exhaust cards leave combat instead of going to the discard pile.
       if (!card.exhaust) p.discard.push(card)
 
-      if (s.enemies.every((e) => e.hp <= 0)) {
-        s.enemies.forEach((e) => (e.hp = Math.max(0, e.hp)))
-        if (s.encounter >= RUN.length - 1) {
-          s.phase = 'won'
-          logLine(s, 'THE MAINFRAME goes dark. Dawn holds.')
-        } else {
-          s.phase = 'cleared'
-          s.rewardChoices = rollRewards()
-          logLine(s, `${s.enemies[ti]?.name ?? 'The Machine'} halts.`)
-        }
-      }
+      resolveIfCleared(s, s.enemies[ti]?.name)
       return s
     }
     case 'END_TURN': {

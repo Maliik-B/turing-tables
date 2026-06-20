@@ -51,6 +51,14 @@ export const CARDS: Record<string, CardDef> = {
     text: 'Apply 2 Weak.',
     weak: 2,
   },
+  corrupt: {
+    key: 'corrupt',
+    name: 'Corrupt',
+    cost: 1,
+    type: 'attack',
+    text: 'Apply 4 Corruption. It bites each round, fading by 1.',
+    corruption: 4,
+  },
   defend: {
     key: 'defend',
     name: 'Defend',
@@ -156,5 +164,6 @@ export const STARTER_DECK: string[] = [
   'overclock',
   'expose',
   'disrupt',
+  'corrupt',
   'sever',
 ]

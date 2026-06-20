@@ -51,6 +51,14 @@ export function EnemyPanel({
               🛡 {enemy.block}
             </span>
           )}
+          {enemy.corruption > 0 && (
+            <span
+              title="Corruption: bites this much at the start of the enemy's turn, then fades by 1."
+              className="rounded bg-lime-500/20 px-2 py-0.5 text-xs text-lime-300"
+            >
+              ☣ {enemy.corruption}
+            </span>
+          )}
           <span className="font-mono text-neutral-300">
             {Math.max(0, enemy.hp)}/{enemy.maxHp}
           </span>
