@@ -13,6 +13,8 @@ export interface CardDef {
   weak?: number
   // "Sever": force the Machine onto the scripted brain for this many turns.
   sever?: number
+  // "Corrupt": stack damage-over-time on the enemy (bites each round, wanes 1).
+  corruption?: number
   // Removed from the deck for the rest of the combat after being played.
   exhaust?: boolean
 }
@@ -62,6 +64,8 @@ export interface Enemy {
   block: number
   vulnerable: number
   weak: number
+  // Player-stacked damage-over-time; bites at the start of each enemy phase.
+  corruption: number
   intent: Intent
   intentSource: MoveSource
   targetSeat: number
