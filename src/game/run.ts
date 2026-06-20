@@ -27,7 +27,7 @@ export interface EncounterDef {
 export const RUN: EncounterDef[] = [
   {
     name: 'ELIZA-0',
-    hp: 60,
+    hp: 55,
     model: null,
     abilities: [],
     intel: [
@@ -38,7 +38,7 @@ export const RUN: EncounterDef[] = [
   },
   {
     name: 'DAEMON-1',
-    hp: 90,
+    hp: 80,
     model: 'gemini-2.5-flash-lite',
     abilities: ['weaken'],
     intel: [
@@ -51,7 +51,7 @@ export const RUN: EncounterDef[] = [
   },
   {
     name: 'ORACLE-2',
-    hp: 110,
+    hp: 98,
     model: 'gemini-2.5-flash',
     abilities: ['expose'],
     intel: [
@@ -64,7 +64,7 @@ export const RUN: EncounterDef[] = [
   },
   {
     name: 'THE MAINFRAME',
-    hp: 160,
+    hp: 135,
     model: 'gemini-2.5-pro',
     abilities: ['expose', 'drain'],
     remembers: true,
