@@ -228,5 +228,4 @@ export const STARTER_DECK: string[] = [
   'disrupt',
   'corrupt',
   'leech',
-  'sever',
 ]
