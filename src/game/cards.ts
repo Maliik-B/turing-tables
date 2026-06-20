@@ -22,11 +22,11 @@ export const CARDS: Record<string, CardDef> = {
   ping: {
     key: 'ping',
     name: 'Ping',
-    cost: 0,
+    cost: 1,
     type: 'attack',
-    text: 'Deal 2 damage. Draw 1.',
-    damage: 2,
-    draw: 1,
+    text: 'Deal 3 damage. Returns to your hand.',
+    damage: 3,
+    resummon: true,
   },
   heavy: {
     key: 'heavy',
@@ -75,9 +75,9 @@ export const CARDS: Record<string, CardDef> = {
     name: 'Leech',
     cost: 1,
     type: 'attack',
-    text: 'Deal 5 damage. Heal 3.',
+    text: 'Deal 5 damage. Heal half the damage dealt.',
     damage: 5,
-    heal: 3,
+    drains: true,
   },
   defend: {
     key: 'defend',

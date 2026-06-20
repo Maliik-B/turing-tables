@@ -20,6 +20,11 @@ export interface CardDef {
   retain?: number
   // "Recur": returns to the player's hand when they correctly Call an Imitation.
   recur?: boolean
+  // "Resummon": returns to hand right after being played — a repeatable,
+  // energy-gated attack you can chain.
+  resummon?: boolean
+  // This attack heals the player for half the damage it lands (scales).
+  drains?: boolean
   // Temporary attack buff: +power damage per attack for powerTurns turns.
   power?: number
   powerTurns?: number

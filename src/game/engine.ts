@@ -337,7 +337,7 @@ export function reducer(state: GameState, action: Action): GameState {
         const dealt = dealDamage(enemy, amount)
         s.runStats.damageDealt += amount
         logLine(s, `${p.name} plays ${card.name} → ${amount} dmg.`)
-        if ((p.lifestealTurns ?? 0) > 0 && dealt > 0) {
+        if (((p.lifestealTurns ?? 0) > 0 || card.drains) && dealt > 0) {
           const healed = Math.floor(dealt / 2)
           if (healed > 0) {
             p.hp = Math.min(p.maxHp, p.hp + healed)
@@ -416,8 +416,10 @@ export function reducer(state: GameState, action: Action): GameState {
       // Observed card-counting (ORACLE): distinct cards revealed this fight.
       if (!s.seen.includes(card.name)) s.seen.push(card.name)
 
-      // Exhaust cards leave combat instead of going to the discard pile.
-      if (!card.exhaust) p.discard.push(card)
+      // Resummon returns the card to hand (a repeatable, energy-gated attack);
+      // exhaust removes it; otherwise it goes to the discard pile.
+      if (card.resummon) p.hand.push(card)
+      else if (!card.exhaust) p.discard.push(card)
 
       // Killing the enemy wins the fight even if self-damage also dropped you;
       // otherwise, self-damage (Overload Core) can be lethal.

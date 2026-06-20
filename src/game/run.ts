@@ -47,7 +47,7 @@ export const RUN: EncounterDef[] = [
       'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted decoys.',
     ],
     cardCount: 'none',
-    passive: 'Reads your live board',
+    passive: 'Reads your board — not your cards, yet',
   },
   {
     name: 'ORACLE-2',
