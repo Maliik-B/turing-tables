@@ -42,7 +42,7 @@ export const CARDS: Record<string, CardDef> = {
     name: 'Expose',
     cost: 1,
     type: 'skill',
-    text: 'Vulnerable for 2 turns.',
+    text: 'Apply Vulnerable for 2 turns.',
     vulnerable: 2,
   },
   disrupt: {
@@ -50,7 +50,7 @@ export const CARDS: Record<string, CardDef> = {
     name: 'Disrupt',
     cost: 1,
     type: 'skill',
-    text: 'Weak for 2 turns.',
+    text: 'Apply Weak for 2 turns.',
     weak: 2,
   },
   corrupt: {
@@ -127,7 +127,7 @@ export const CARDS: Record<string, CardDef> = {
     name: 'Reinforce',
     cost: 2,
     type: 'skill',
-    text: 'Gain 8 block. Vulnerable for 2 turns.',
+    text: 'Gain 8 block. Apply Vulnerable for 2 turns.',
     block: 8,
     vulnerable: 2,
   },

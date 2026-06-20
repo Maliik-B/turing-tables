@@ -297,15 +297,15 @@ export function BattleScreen({
             className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-neutral-950/90 px-6 text-center backdrop-blur"
           >
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-amber-400/70">
-              A new tool
+              The grid wakes
             </p>
             <h2 className="text-2xl font-bold text-amber-200">
-              You learn to Sever the link.
+              From here, you must sever the link.
             </h2>
             <p className="max-w-md text-sm leading-relaxed text-neutral-400">
-              From here the machines think with Gemini. Sever cuts a machine's
-              link for two turns — forcing its dumb scripted routines, so it
-              plays blind and predictable while you press the advantage.
+              ELIZA was a dead-end husk — no link to the grid, nothing to cut.
+              The machines below are wired into the central network. Sever drops
+              one to blind, scripted routines for two turns. You'll want it.
             </p>
             <CardView
               card={{ ...CARDS.sever, uid: -1 }}
@@ -317,7 +317,7 @@ export function BattleScreen({
               onClick={() => setSeverIntroSeen(true)}
               className="mt-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-6 py-2 font-semibold text-amber-300 hover:bg-amber-500/20"
             >
-              Take it (Enter)
+              Continue (Enter)
             </button>
           </motion.div>
         )}
