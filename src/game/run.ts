@@ -38,7 +38,7 @@ export const RUN: EncounterDef[] = [
   },
   {
     name: 'DAEMON-1',
-    hp: 80,
+    hp: 88,
     model: 'gemini-2.5-flash-lite',
     abilities: ['weaken'],
     intel: [
