@@ -65,14 +65,14 @@ export const RUN: EncounterDef[] = [
   {
     name: 'THE MAINFRAME',
     hp: 135,
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     abilities: ['expose', 'drain'],
     remembers: true,
     intel: [
       'Strikes for 8–14 · Shields for ~8',
       'Combo: exposes you, then drains the opening — big hit, heals itself',
       'Resists corruption — your DoT takes hold at half strength',
-      'Runs Gemini Flash, knows your whole deck, and has studied your prior trials.',
+      'Runs Gemini 3 Flash, knows your whole deck, and has studied your prior trials.',
     ],
     cardCount: 'full',
     passive: 'Reads your board · knows your entire deck',
@@ -83,14 +83,16 @@ export const RUN: EncounterDef[] = [
 export const HEAL_FRACTION = 0.3
 
 // Friendly display name for a model id, shown on the "Machine:" chip so a judge
-// who never reaches Trial 4 still sees the escalating Flash-Lite -> Flash -> Pro
-// ladder. Falls back to a generic label for any unmapped id.
+// who never reaches Trial 4 still sees the escalating Flash-Lite -> Flash ->
+// Gemini 3 ladder. Falls back to a generic label for any unmapped id.
 export function modelLabel(model: string | null | undefined): string {
   switch (model) {
     case 'gemini-2.5-flash-lite':
       return 'Gemini 2.5 Flash-Lite'
     case 'gemini-2.5-flash':
       return 'Gemini 2.5 Flash'
+    case 'gemini-3-flash-preview':
+      return 'Gemini 3 Flash'
     case 'gemini-2.5-pro':
       return 'Gemini 2.5 Pro'
     default:
