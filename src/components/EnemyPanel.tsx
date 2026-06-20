@@ -74,13 +74,19 @@ export function EnemyPanel({
           <>
             <p className={`text-xs ${intentColor}`}>{intentText}</p>
             {enemy.vulnerable > 0 && (
-              <span className="rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300">
-                VULN {enemy.vulnerable}
+              <span
+                title="Vulnerable: this machine takes +50% damage. Number = rounds left."
+                className="rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300"
+              >
+                VULN {enemy.vulnerable} · +50%
               </span>
             )}
             {enemy.weak > 0 && (
-              <span className="rounded bg-amber-700/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
-                WEAK {enemy.weak}
+              <span
+                title="Weak: this machine deals -25% damage. Number = rounds left."
+                className="rounded bg-amber-700/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-300"
+              >
+                WEAK {enemy.weak} · -25%
               </span>
             )}
             {enemy.revealed && (
