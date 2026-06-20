@@ -8,16 +8,44 @@ import { CardView } from './CardView'
 import { DossierPanel } from './DossierPanel'
 import { CARDS } from '../game/cards'
 
+// Card-counting confidence for the Gemini passive: rises as the player's deck
+// thins. Observed = fraction of distinct cards seen; full = fraction played.
+function readConfidence(
+  cardCount: 'none' | 'observed' | 'full',
+  human:
+    | { collection: { name: string }[]; deck: unknown[]; hand: unknown[] }
+    | undefined,
+  seen: string[],
+): string | null {
+  if (cardCount === 'none' || !human) return null
+  let progress: number
+  if (cardCount === 'observed') {
+    const distinct = new Set(human.collection.map((c) => c.name)).size
+    progress = distinct ? Math.min(1, seen.length / distinct) : 0
+  } else {
+    const total = human.collection.length
+    const unplayed = human.deck.length + human.hand.length
+    progress = total ? Math.max(0.5, 1 - unplayed / total) : 0.5
+  }
+  return progress < 0.45
+    ? 'a rough idea'
+    : progress < 0.78
+      ? 'a good idea'
+      : 'near-certain'
+}
+
 export function BattleScreen({
   state,
   dispatch,
   apiKey,
   onApiKey,
+  record,
 }: {
   state: GameState
   dispatch: Dispatch<Action>
   apiKey: string
   onApiKey: (key: string) => void
+  record: { wins: number; losses: number }
 }) {
   const {
     enemies,
@@ -50,6 +78,7 @@ export function BattleScreen({
   }, [encounter])
   const severIntro =
     !!me && !over && !cleared && encounter === 1 && !severIntroSeen
+  const [showDeck, setShowDeck] = useState(false)
 
   // Full keyboard control so the game is playable without precise taps:
   //   1-9 play the card in that slot · E end turn · C call imitation
@@ -70,6 +99,11 @@ export function BattleScreen({
 
       if (severIntro) {
         if (e.key === 'Enter' || e.key === ' ') setSeverIntroSeen(true)
+        return
+      }
+
+      if (showDeck) {
+        if (e.key === 'Escape' || k === 'd') setShowDeck(false)
         return
       }
 
@@ -95,6 +129,10 @@ export function BattleScreen({
         }
         return
       }
+      if (k === 'd') {
+        setShowDeck(true)
+        return
+      }
       if (k === 'e') {
         dispatch({ type: 'END_TURN', seat: activeSeat })
       } else if (
@@ -116,6 +154,7 @@ export function BattleScreen({
     cleared,
     over,
     severIntro,
+    showDeck,
     rewardChoices,
     curIsGemini,
     calledThisRound,
@@ -175,15 +214,21 @@ export function BattleScreen({
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {enemies.map((e) => (
-          <EnemyPanel
-            key={e.id}
-            enemy={e}
-            thinking={awaitingIntents}
-            round={round}
-            gemini={!!apiKey && !!e.model}
-          />
-        ))}
+        {enemies.map((e) => {
+          const isGemini = !!apiKey && !!e.model
+          return (
+            <EnemyPanel
+              key={e.id}
+              enemy={e}
+              thinking={awaitingIntents}
+              round={round}
+              gemini={isGemini}
+              confidence={
+                isGemini ? readConfidence(e.cardCount, me, state.seen ?? []) : null
+              }
+            />
+          )
+        })}
       </div>
 
       <DossierPanel stats={runStats} active={!!cur?.remembers} />
@@ -246,11 +291,16 @@ export function BattleScreen({
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col font-mono text-xs text-neutral-500">
-                <span>
-                  Deck {me.deck.length} · Discard {me.discard.length}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowDeck(true)}
+                  title="View your full deck (D)"
+                  className="text-left hover:text-amber-300"
+                >
+                  Deck {me.deck.length} · Discard {me.discard.length} ▸
+                </button>
                 <span className="text-[10px] text-neutral-600">
-                  1-5 play · E end · C call
+                  1-5 play · E end · C call · D deck
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -290,6 +340,37 @@ export function BattleScreen({
       </div>
 
       <AnimatePresence>
+        {showDeck && me && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-neutral-950/92 px-6 backdrop-blur"
+          >
+            <div className="flex w-full max-w-md items-center justify-between">
+              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-amber-300">
+                Your deck · {me.collection.length} cards
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowDeck(false)}
+                className="font-mono text-xs text-neutral-400 hover:text-amber-300"
+              >
+                Close (D / Esc)
+              </button>
+            </div>
+            <div className="flex max-h-[62vh] w-full max-w-3xl flex-wrap items-start justify-center gap-2 overflow-y-auto py-1">
+              {me.collection.map((card) => (
+                <div key={card.uid} className="origin-top scale-90">
+                  <CardView card={card} playable={false} onClick={() => {}} />
+                </div>
+              ))}
+            </div>
+            <p className="font-mono text-[10px] text-neutral-600">
+              This is exactly what the Mainframe already knows.
+            </p>
+          </motion.div>
+        )}
         {severIntro && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -414,6 +495,11 @@ export function BattleScreen({
                 </>
               )}
             </div>
+            <p className="font-mono text-[11px] text-neutral-500">
+              Record this session:{' '}
+              <span className="text-emerald-300">{record.wins}W</span> ·{' '}
+              <span className="text-red-300">{record.losses}L</span>
+            </p>
             <button
               type="button"
               onClick={() => dispatch({ type: 'RESTART' })}

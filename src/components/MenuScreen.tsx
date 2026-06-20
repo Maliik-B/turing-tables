@@ -4,10 +4,12 @@ export function MenuScreen({
   apiKey,
   onApiKey,
   onBegin,
+  record,
 }: {
   apiKey: string
   onApiKey: (key: string) => void
   onBegin: () => void
+  record: { wins: number; losses: number }
 }) {
   // Enter begins the run (keyboard-first play).
   useEffect(() => {
@@ -38,6 +40,12 @@ export function MenuScreen({
       >
         Begin
       </button>
+      {record.wins + record.losses > 0 && (
+        <p className="-mt-3 font-mono text-[11px] text-neutral-500">
+          Record: <span className="text-emerald-300">{record.wins}W</span> ·{' '}
+          <span className="text-red-300">{record.losses}L</span>
+        </p>
+      )}
       <div className="mt-2 w-full max-w-md">
         <label className="mb-1 block text-left font-mono text-[11px] uppercase tracking-wider text-neutral-500">
           Gemini API key — optional
