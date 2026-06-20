@@ -327,6 +327,8 @@ export function reducer(state: GameState, action: Action): GameState {
 
       const ti = action.targetEnemy ?? firstAliveEnemy(s)
       const enemy = s.enemies[ti]
+      // Collect every effect so the whole card resolves on ONE readable log line.
+      const fx: string[] = []
 
       if (card.damage && enemy) {
         const amount = modified(
@@ -336,48 +338,51 @@ export function reducer(state: GameState, action: Action): GameState {
         )
         const dealt = dealDamage(enemy, amount)
         s.runStats.damageDealt += amount
-        logLine(s, `${p.name} plays ${card.name} → ${amount} dmg.`)
+        fx.push(`${amount} dmg`)
         if (((p.lifestealTurns ?? 0) > 0 || card.drains) && dealt > 0) {
           const healed = Math.floor(dealt / 2)
           if (healed > 0) {
             p.hp = Math.min(p.maxHp, p.hp + healed)
-            logLine(s, `${p.name} drains ${healed} from the wound.`)
+            fx.push(`heal ${healed}`)
           }
         }
       }
       if (card.block) {
         p.block += card.block
         s.runStats.blockGained += card.block
-        logLine(s, `${p.name} plays ${card.name} (+${card.block} block).`)
+        fx.push(`+${card.block} block`)
       }
       if (card.retain) {
         p.retainBlock += card.retain
-        logLine(s, `${p.name} plays ${card.name} (+${card.retain} block next turn).`)
+        fx.push(`+${card.retain} block next turn`)
       }
-      if (card.linger) p.keepBlock = true
+      if (card.linger) {
+        p.keepBlock = true
+        fx.push('block lingers')
+      }
       if (card.heal) {
         p.hp = Math.min(p.maxHp, p.hp + card.heal)
-        logLine(s, `${p.name} plays ${card.name} (heal ${card.heal}).`)
+        fx.push(`heal ${card.heal}`)
       }
       if (card.selfDamage) {
         p.hp -= card.selfDamage
-        logLine(s, `${p.name} plays ${card.name} (-${card.selfDamage} HP).`)
+        fx.push(`-${card.selfDamage} HP`)
       }
       if (card.draw) {
         drawInto(p, card.draw)
-        logLine(s, `${p.name} plays ${card.name} (draw ${card.draw}).`)
+        fx.push(`draw ${card.draw}`)
       }
       if (card.vulnerable && enemy) {
         enemy.vulnerable += card.vulnerable
-        logLine(s, `${p.name} plays ${card.name} (+${card.vulnerable} Vulnerable).`)
+        fx.push(`+${card.vulnerable} Vulnerable`)
       }
       if (card.weak && enemy) {
         enemy.weak += card.weak
-        logLine(s, `${p.name} plays ${card.name} (+${card.weak} Weak).`)
+        fx.push(`+${card.weak} Weak`)
       }
       if (card.sever && enemy) {
         enemy.severedUntilRound = s.round + card.sever
-        logLine(s, `${p.name} plays ${card.name} — the Machine's link is severed.`)
+        fx.push('link severed')
       }
       if (card.corruption && enemy) {
         // The Mainframe has studied you: corruption takes hold at half strength.
@@ -385,28 +390,26 @@ export function reducer(state: GameState, action: Action): GameState {
           ? Math.ceil(card.corruption / 2)
           : card.corruption
         enemy.corruption += applied
-        logLine(
-          s,
+        fx.push(
           enemy.remembers
-            ? `${p.name} plays ${card.name}, but the Mainframe resists (+${applied} Corruption).`
-            : `${p.name} plays ${card.name} (+${applied} Corruption).`,
+            ? `+${applied} Corruption (resisted)`
+            : `+${applied} Corruption`,
         )
       }
       if (card.power) {
         p.power += card.power
         p.powerTurns = Math.max(p.powerTurns ?? 0, card.powerTurns ?? 0)
-        logLine(
-          s,
-          `${p.name} plays ${card.name} (+${card.power} attack damage for ${card.powerTurns} turns).`,
-        )
+        fx.push(`+${card.power} atk dmg / ${card.powerTurns}t`)
       }
       if (card.lifesteal) {
         p.lifestealTurns = Math.max(p.lifestealTurns ?? 0, card.lifesteal)
-        logLine(
-          s,
-          `${p.name} plays ${card.name} — attacks drain life for ${card.lifesteal} turns.`,
-        )
+        fx.push(`lifesteal ${card.lifesteal}t`)
       }
+
+      logLine(
+        s,
+        `${p.name} plays ${card.name}${fx.length ? ' — ' + fx.join(', ') : ''}.`,
+      )
       // Track the player's behavior across the run for the Mainframe's memory.
       s.runStats.cardsPlayed[card.name] =
         (s.runStats.cardsPlayed[card.name] ?? 0) + 1
