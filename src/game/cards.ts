@@ -129,6 +129,24 @@ export const CARDS: Record<string, CardDef> = {
     block: 6,
     retain: 6,
   },
+  loopback: {
+    key: 'loopback',
+    name: 'Loopback',
+    cost: 1,
+    type: 'attack',
+    text: 'Deal 7 damage. Returns to your hand when you correctly Call an Imitation.',
+    damage: 7,
+    recur: true,
+  },
+  overdrive: {
+    key: 'overdrive',
+    name: 'Overdrive',
+    cost: 1,
+    type: 'skill',
+    text: 'Your attacks deal +2 damage for 2 turns.',
+    power: 2,
+    powerTurns: 2,
+  },
   foresight: {
     key: 'foresight',
     name: 'Foresight',
@@ -155,6 +173,8 @@ export const REWARD_POOL: string[] = [
   'overload',
   'reinforce',
   'firewall',
+  'loopback',
+  'overdrive',
   'foresight',
   'siphon',
 ]

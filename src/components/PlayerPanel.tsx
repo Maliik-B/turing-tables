@@ -25,6 +25,14 @@ export function PlayerPanel({ player }: { player: Combatant }) {
               WEAK {player.weak} · -25%
             </span>
           )}
+          {player.power > 0 && (
+            <span
+              title="Overdrive: your attacks deal extra damage. Bonus · turns left."
+              className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-medium text-orange-300"
+            >
+              PWR +{player.power} · {player.powerTurns}t
+            </span>
+          )}
           {player.block > 0 && (
             <span className="rounded bg-sky-500/20 px-2 py-0.5 text-xs text-sky-300">
               🛡 {player.block}
