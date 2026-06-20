@@ -10,13 +10,19 @@ export function PlayerPanel({ player }: { player: Combatant }) {
         </span>
         <div className="flex items-center gap-2 text-sm">
           {player.vulnerable > 0 && (
-            <span className="rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300">
-              VULN {player.vulnerable}
+            <span
+              title="Vulnerable: you take +50% damage. Number = rounds left."
+              className="rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300"
+            >
+              VULN {player.vulnerable} · +50%
             </span>
           )}
           {player.weak > 0 && (
-            <span className="rounded bg-amber-700/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
-              WEAK {player.weak}
+            <span
+              title="Weak: your attacks deal -25%. Number = rounds left."
+              className="rounded bg-amber-700/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-300"
+            >
+              WEAK {player.weak} · -25%
             </span>
           )}
           {player.block > 0 && (

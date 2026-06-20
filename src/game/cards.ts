@@ -64,8 +64,8 @@ export const CARDS: Record<string, CardDef> = {
     name: 'Defend',
     cost: 1,
     type: 'skill',
-    text: 'Gain 5 block.',
-    block: 5,
+    text: 'Gain 6 block.',
+    block: 6,
   },
   bulwark: {
     key: 'bulwark',
@@ -120,6 +120,15 @@ export const CARDS: Record<string, CardDef> = {
     block: 8,
     vulnerable: 2,
   },
+  firewall: {
+    key: 'firewall',
+    name: 'Firewall',
+    cost: 2,
+    type: 'skill',
+    text: 'Gain 6 block now and 6 block at the start of your next turn.',
+    block: 6,
+    retain: 6,
+  },
   foresight: {
     key: 'foresight',
     name: 'Foresight',
@@ -145,6 +154,7 @@ export const REWARD_POOL: string[] = [
   'bulwark',
   'overload',
   'reinforce',
+  'firewall',
   'foresight',
   'siphon',
 ]

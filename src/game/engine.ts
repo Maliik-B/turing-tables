@@ -61,6 +61,7 @@ function makePlayer(seat: number): Combatant {
     energy: 3,
     maxEnergy: 3,
     block: 0,
+    retainBlock: 0,
     vulnerable: 0,
     weak: 0,
     collection: STARTER_DECK.map(instantiate),
@@ -112,6 +113,7 @@ function setupEncounter(s: GameState, index: number): void {
   for (const p of s.players) {
     if (p.hp <= 0) continue
     p.block = 0
+    p.retainBlock = 0
     p.vulnerable = 0
     p.weak = 0
     p.energy = p.maxEnergy
@@ -264,11 +266,14 @@ function runEnemyPhase(s: GameState): void {
     e.targetSeat =
       aliveSeats[Math.floor(Math.random() * aliveSeats.length)] ?? 0
   }
-  // Open the players' new turn: clear status, refill energy, draw a fresh hand.
+  // Open the players' new turn: carry over any retained block, refill energy,
+  // draw a fresh hand.
   for (const p of s.players) {
     if (p.hp <= 0) continue
     p.ended = false
-    p.block = 0
+    p.block = p.retainBlock
+    s.runStats.blockGained += p.retainBlock
+    p.retainBlock = 0
     p.energy = p.maxEnergy
     drawInto(p, HAND_SIZE)
   }
@@ -300,6 +305,10 @@ export function reducer(state: GameState, action: Action): GameState {
         p.block += card.block
         s.runStats.blockGained += card.block
         logLine(s, `${p.name} plays ${card.name} (+${card.block} block).`)
+      }
+      if (card.retain) {
+        p.retainBlock += card.retain
+        logLine(s, `${p.name} plays ${card.name} (+${card.retain} block next turn).`)
       }
       if (card.draw) {
         drawInto(p, card.draw)

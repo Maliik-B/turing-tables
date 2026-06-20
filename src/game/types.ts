@@ -15,6 +15,9 @@ export interface CardDef {
   sever?: number
   // "Corrupt": stack damage-over-time on the enemy (bites each round, wanes 1).
   corruption?: number
+  // "Retain": block delivered at the start of the player's NEXT turn (lingering
+  // defense, so you aren't re-blocking from scratch every round).
+  retain?: number
   // Removed from the deck for the rest of the combat after being played.
   exhaust?: boolean
 }
@@ -45,6 +48,8 @@ export interface Combatant {
   energy: number
   maxEnergy: number
   block: number
+  // Block carried into the start of the next turn (from "retain" cards).
+  retainBlock: number
   vulnerable: number
   weak: number
   // The persistent deck across the run (grows via rewards). Working piles
