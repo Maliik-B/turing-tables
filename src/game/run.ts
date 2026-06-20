@@ -36,7 +36,7 @@ export const RUN: EncounterDef[] = [
     abilities: ['weaken'],
     intel: [
       'Strikes for 8–14 · Shields for ~8',
-      'Weakens you — saps your attacks (−25%)',
+      'Combo: weakens you (−25%), then shields so your softened hits glance off',
       'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted decoys.',
     ],
   },
@@ -47,7 +47,7 @@ export const RUN: EncounterDef[] = [
     abilities: ['expose'],
     intel: [
       'Strikes for 8–14 · Shields for ~8',
-      'Exposes you — marks you Vulnerable (+50% damage taken)',
+      'Combo: exposes you (Vulnerable, +50%), then strikes the opening',
       'Runs Gemini Flash — sharper. Its decoys are subtler.',
     ],
   },
@@ -55,11 +55,11 @@ export const RUN: EncounterDef[] = [
     name: 'THE MAINFRAME',
     hp: 120,
     model: 'gemini-2.5-pro',
-    abilities: ['drain'],
+    abilities: ['expose', 'drain'],
     remembers: true,
     intel: [
       'Strikes for 8–14 · Shields for ~8',
-      'Drains your life to heal itself',
+      'Combo: exposes you, then drains the opening — big hit, heals itself',
       'Resists corruption — your DoT takes hold at half strength',
       'Runs Gemini Pro and has studied your prior trials — it adapts to you.',
     ],

@@ -37,12 +37,22 @@ function App() {
     void (async () => {
       const [intents] = await Promise.all([
         Promise.all(
-          alive.map((e) =>
-            decideMove(
+          alive.map((e) => {
+            const human = state.players[e.targetSeat] ?? state.players[0]
+            return decideMove(
               {
                 lastMove: e.lastMove,
                 hpRatio: e.hp / e.maxHp,
                 abilities: e.abilities,
+                player: human
+                  ? {
+                      hpRatio: human.hp / human.maxHp,
+                      block: human.block,
+                      vulnerable: human.vulnerable,
+                      weak: human.weak,
+                      power: human.power,
+                    }
+                  : undefined,
               },
               {
                 apiKey: apiKey || null,
@@ -52,8 +62,8 @@ function App() {
                   ? buildDossier(state.runStats)
                   : undefined,
               },
-            ),
-          ),
+            )
+          }),
         ),
         new Promise((r) => setTimeout(r, minThink)),
       ])

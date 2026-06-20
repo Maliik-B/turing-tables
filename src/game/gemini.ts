@@ -29,13 +29,31 @@ export async function geminiDecideMove(
       .filter(Boolean)
     const system =
       BASE_SYSTEM +
-      (abilityDescs.length ? '\nYour signature abilities:\n- ' + abilityDescs.join('\n- ') : '') +
+      (abilityDescs.length
+        ? '\nYour signature abilities:\n- ' +
+          abilityDescs.join('\n- ') +
+          '\nCombo them: set up a debuff (Vulnerable/Weak), then cash it in next turn — a heavy attack into Vulnerable, or a drain.'
+        : '') +
+      "\nRead the human's board and react: don't sink a big hit into a wall of block, press for the kill when they're low, and brace when they're powered up to strike." +
       '\nPlay to win. Be unpredictable but coherent — a human should sense a mind behind the moves.'
 
     const lines = [
       `Your HP is ${Math.round(ctx.hpRatio * 100)}% of maximum.`,
       `Your previous move was: ${ctx.lastMove ?? 'none'}.`,
     ]
+    if (ctx.player) {
+      const p = ctx.player
+      const tags: string[] = []
+      if (p.block > 0) tags.push(`${p.block} block`)
+      if (p.vulnerable > 0) tags.push('Vulnerable')
+      if (p.weak > 0) tags.push('Weakened')
+      if (p.power > 0) tags.push('powered-up to hit hard')
+      lines.push(
+        `The human is at ${Math.round(p.hpRatio * 100)}% HP${
+          tags.length ? ', with ' + tags.join(', ') : ''
+        }.`,
+      )
+    }
     if (memory) lines.push(`Intel on this human from earlier trials: ${memory}`)
     lines.push('Choose your next move.')
 

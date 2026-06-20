@@ -10,6 +10,15 @@ export interface BrainContext {
   hpRatio: number
   // Signature moves (beyond attack/block) this enemy may deploy.
   abilities: IntentType[]
+  // The human's current board. The Gemini brain reads and reacts to this; the
+  // scripted brain ignores it (being blind to it is the real tell to hunt).
+  player?: {
+    hpRatio: number
+    block: number
+    vulnerable: number
+    weak: number
+    power: number
+  }
 }
 
 // Shared ability info for both brains: the fixed value the ability uses and a
@@ -32,20 +41,50 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
 }
 
 // The scripted ("imitation") opponent brain — the free, offline fallback and
-// the "imitation" half of the Turing-test guess-check. A believable imitation:
-//   - sometimes deploys its signature ability (if any)
+// the "imitation" half of the Turing-test guess-check. It plays COHERENTLY: it
+// sets up a debuff and cashes it in the next turn (the same two-move combos the
+// Gemini brain runs), so a combo never reveals which brain is acting. What it
+// canNOT do is read the human's board — it never reacts to your block, your
+// power-up, or your HP. That obliviousness is the real tell to hunt.
 //   - never shields twice in a row; never shields while enraged (low HP)
 //   - hits harder when enraged
 export function decideEnemyMove(ctx: BrainContext): EnemyMove {
   const enraged = ctx.hpRatio <= 0.35
+  const has = (a: IntentType) => ctx.abilities.includes(a)
+  const attack = (): EnemyMove => {
+    const base = 8 + Math.floor(Math.random() * 5) // 8-12
+    return {
+      intent: { type: 'attack', value: enraged ? base + 4 : base },
+      source: 'scripted',
+    }
+  }
 
+  // PAYOFF — cash in a setup from last turn.
+  if (ctx.lastMove === 'expose') {
+    // The human is Vulnerable; hit the opening. Drain it if we can (Mainframe).
+    if (has('drain')) {
+      return {
+        intent: { type: 'drain', value: ABILITY_INFO.drain?.value ?? 9 },
+        source: 'scripted',
+      }
+    }
+    return attack()
+  }
+  if (ctx.lastMove === 'weaken' && !enraged) {
+    // We softened their attacks — turtle so the weakened hits glance off.
+    return { intent: { type: 'block', value: 8 }, source: 'scripted' }
+  }
+
+  // SETUP — open a combo with a signature debuff (prefer expose/weaken).
   if (
     ctx.abilities.length > 0 &&
     !enraged &&
     ctx.lastMove !== 'block' &&
-    Math.random() < 0.3
+    Math.random() < 0.4
   ) {
-    const ab = ctx.abilities[Math.floor(Math.random() * ctx.abilities.length)]
+    const setups = ctx.abilities.filter((a) => a === 'expose' || a === 'weaken')
+    const pool = setups.length ? setups : ctx.abilities
+    const ab = pool[Math.floor(Math.random() * pool.length)]
     if (ab) {
       return {
         intent: { type: ab, value: ABILITY_INFO[ab]?.value ?? 2 },
@@ -54,12 +93,9 @@ export function decideEnemyMove(ctx: BrainContext): EnemyMove {
     }
   }
 
-  const canBlock = ctx.lastMove !== 'block' && !enraged
-  if (canBlock && Math.random() < 0.28) {
+  // Generic block / attack.
+  if (ctx.lastMove !== 'block' && !enraged && Math.random() < 0.28) {
     return { intent: { type: 'block', value: 8 }, source: 'scripted' }
   }
-
-  const base = 8 + Math.floor(Math.random() * 5) // 8-12
-  const value = enraged ? base + 4 : base
-  return { intent: { type: 'attack', value }, source: 'scripted' }
+  return attack()
 }
