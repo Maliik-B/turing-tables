@@ -47,9 +47,9 @@ export async function decideMove(
 // the Mainframe's prompt — this is what makes the final boss "remember" you.
 export function buildDossier(s: RunStats): string {
   const lean =
-    s.attacks > s.skills * 1.5
+    s.attacks > s.skills * 1.2
       ? 'aggressively, leaning on attacks'
-      : s.skills > s.attacks * 1.5
+      : s.skills > s.attacks * 1.2
         ? 'defensively, leaning on skills and block'
         : 'in a balanced way'
   const top = Object.entries(s.cardsPlayed).sort((a, b) => b[1] - a[1])[0]

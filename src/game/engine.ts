@@ -75,6 +75,7 @@ function makePlayer(seat: number): Combatant {
     power: 0,
     powerTurns: 0,
     lifestealTurns: 0,
+    attacksThisTurn: 0,
     collection: STARTER_DECK.map(instantiate),
     deck: [],
     hand: [],
@@ -134,6 +135,7 @@ function setupEncounter(s: GameState, index: number): void {
     p.power = 0
     p.powerTurns = 0
     p.lifestealTurns = 0
+    p.attacksThisTurn = 0
     p.energy = p.maxEnergy
     p.ended = false
     p.deck = shuffle([...p.collection])
@@ -307,6 +309,7 @@ function runEnemyPhase(s: GameState): void {
       if (p.powerTurns === 0) p.power = 0
     }
     if ((p.lifestealTurns ?? 0) > 0) p.lifestealTurns -= 1
+    p.attacksThisTurn = 0
     p.energy = p.maxEnergy
     drawInto(p, HAND_SIZE)
   }
@@ -331,8 +334,10 @@ export function reducer(state: GameState, action: Action): GameState {
       const fx: string[] = []
 
       if (card.damage && enemy) {
+        const followBonus =
+          card.followup && (p.attacksThisTurn ?? 0) > 0 ? card.followup : 0
         const amount = modified(
-          card.damage + (p.power ?? 0),
+          card.damage + (p.power ?? 0) + followBonus,
           p.weak,
           enemy.vulnerable,
         )
@@ -413,8 +418,10 @@ export function reducer(state: GameState, action: Action): GameState {
       // Track the player's behavior across the run for the Mainframe's memory.
       s.runStats.cardsPlayed[card.name] =
         (s.runStats.cardsPlayed[card.name] ?? 0) + 1
-      if (card.type === 'attack') s.runStats.attacks += 1
-      else s.runStats.skills += 1
+      if (card.type === 'attack') {
+        s.runStats.attacks += 1
+        p.attacksThisTurn = (p.attacksThisTurn ?? 0) + 1
+      } else s.runStats.skills += 1
       if (card.sever) s.runStats.severs += 1
       // Observed card-counting (ORACLE): distinct cards revealed this fight.
       if (!s.seen.includes(card.name)) s.seen.push(card.name)

@@ -25,6 +25,8 @@ export interface CardDef {
   resummon?: boolean
   // This attack heals the player for half the damage it lands (scales).
   drains?: boolean
+  // Bonus damage if the player has already attacked this turn (follow-up).
+  followup?: number
   // Temporary attack buff: +power damage per attack for powerTurns turns.
   power?: number
   powerTurns?: number
@@ -78,6 +80,8 @@ export interface Combatant {
   powerTurns: number
   // Turns of lifesteal remaining: attacks heal half the damage they land.
   lifestealTurns: number
+  // Attacks played so far this turn (for follow-up cards). Reset each turn.
+  attacksThisTurn: number
   // The persistent deck across the run (grows via rewards). Working piles
   // below are rebuilt from this at the start of each trial.
   collection: Card[]

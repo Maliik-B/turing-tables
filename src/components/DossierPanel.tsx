@@ -6,8 +6,8 @@ import type { RunStats } from '../game/types'
 // buildDossier() feeds the Mainframe, so what's on screen IS the file.
 function profile(s: RunStats): string {
   if (s.attacks === 0 && s.skills === 0) return 'Unread · no data yet'
-  if (s.attacks > s.skills * 1.5) return 'Aggressive · leans on attacks'
-  if (s.skills > s.attacks * 1.5) return 'Defensive · leans on block and skills'
+  if (s.attacks > s.skills * 1.2) return 'Aggressive · leans on attacks'
+  if (s.skills > s.attacks * 1.2) return 'Defensive · leans on block and skills'
   return 'Balanced · mixes attack and defense'
 }
 
