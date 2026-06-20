@@ -5,10 +5,13 @@ export function EnemyPanel({
   enemy,
   thinking,
   round,
+  gemini,
 }: {
   enemy: Enemy
   thinking: boolean
   round: number
+  // True when this enemy is currently running the Gemini brain (a key is set).
+  gemini: boolean
 }) {
   const dead = enemy.hp <= 0
   const severedLeft = Math.max(0, enemy.severedUntilRound - round + 1)
@@ -65,6 +68,11 @@ export function EnemyPanel({
         </div>
       </div>
       <StatBar value={enemy.hp} max={enemy.maxHp} className="bg-red-500" />
+      {gemini && !dead && enemy.passive && (
+        <p className="mt-1.5 flex items-center gap-1 font-mono text-[10px] text-emerald-300/80">
+          <span aria-hidden>◈</span> Passive: {enemy.passive}
+        </p>
+      )}
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {dead ? (
           <p className="text-xs text-neutral-500">Offline.</p>

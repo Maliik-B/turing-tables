@@ -39,6 +39,16 @@ function App() {
         Promise.all(
           alive.map((e) => {
             const human = state.players[e.targetSeat] ?? state.players[0]
+            const deck =
+              e.cardCount === 'observed'
+                ? { knowledge: 'observed' as const, cards: state.seen ?? [] }
+                : e.cardCount === 'full' && human
+                  ? {
+                      knowledge: 'full' as const,
+                      cards: human.collection.map((c) => c.name),
+                      unplayed: human.deck.length + human.hand.length,
+                    }
+                  : undefined
             return decideMove(
               {
                 lastMove: e.lastMove,
@@ -53,6 +63,7 @@ function App() {
                       power: human.power,
                     }
                   : undefined,
+                deck,
               },
               {
                 apiKey: apiKey || null,

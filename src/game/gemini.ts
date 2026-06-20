@@ -54,6 +54,21 @@ export async function geminiDecideMove(
         }.`,
       )
     }
+    if (ctx.deck) {
+      if (ctx.deck.knowledge === 'full') {
+        lines.push(
+          `You know the human's entire deck: ${ctx.deck.cards.join(', ')}. ${
+            ctx.deck.unplayed ?? 0
+          } cards remain unplayed. Reason about what they can still draw — but you do NOT see their hand or draw order.`,
+        )
+      } else {
+        lines.push(
+          `Cards you have watched the human play this fight: ${
+            ctx.deck.cards.length ? ctx.deck.cards.join(', ') : 'none yet'
+          }. Infer their deck and what they still hold — you do NOT see their hand.`,
+        )
+      }
+    }
     if (memory) lines.push(`Intel on this human from earlier trials: ${memory}`)
     lines.push('Choose your next move.')
 
