@@ -62,6 +62,7 @@ function makePlayer(seat: number): Combatant {
     maxEnergy: 3,
     block: 0,
     retainBlock: 0,
+    keepBlock: false,
     vulnerable: 0,
     weak: 0,
     power: 0,
@@ -116,6 +117,7 @@ function setupEncounter(s: GameState, index: number): void {
     if (p.hp <= 0) continue
     p.block = 0
     p.retainBlock = 0
+    p.keepBlock = false
     p.vulnerable = 0
     p.weak = 0
     p.power = 0
@@ -277,9 +279,12 @@ function runEnemyPhase(s: GameState): void {
     if (p.hp <= 0) continue
     p.ended = false
     const retained = p.retainBlock ?? 0
-    p.block = retained
+    // Lingering block (Firewall) keeps this turn's leftover so it stacks.
+    const kept = p.keepBlock ? p.block : 0
+    p.block = kept + retained
     s.runStats.blockGained += retained
     p.retainBlock = 0
+    p.keepBlock = false
     if ((p.powerTurns ?? 0) > 0) {
       p.powerTurns -= 1
       if (p.powerTurns === 0) p.power = 0
@@ -323,6 +328,15 @@ export function reducer(state: GameState, action: Action): GameState {
       if (card.retain) {
         p.retainBlock += card.retain
         logLine(s, `${p.name} plays ${card.name} (+${card.retain} block next turn).`)
+      }
+      if (card.linger) p.keepBlock = true
+      if (card.heal) {
+        p.hp = Math.min(p.maxHp, p.hp + card.heal)
+        logLine(s, `${p.name} plays ${card.name} (heal ${card.heal}).`)
+      }
+      if (card.selfDamage) {
+        p.hp -= card.selfDamage
+        logLine(s, `${p.name} plays ${card.name} (-${card.selfDamage} HP).`)
       }
       if (card.draw) {
         drawInto(p, card.draw)
@@ -371,7 +385,16 @@ export function reducer(state: GameState, action: Action): GameState {
       // Exhaust cards leave combat instead of going to the discard pile.
       if (!card.exhaust) p.discard.push(card)
 
-      resolveIfCleared(s, s.enemies[ti]?.name)
+      // Killing the enemy wins the fight even if self-damage also dropped you;
+      // otherwise, self-damage (Overload Core) can be lethal.
+      if (
+        !resolveIfCleared(s, s.enemies[ti]?.name) &&
+        s.players.every((pl) => pl.hp <= 0)
+      ) {
+        s.players.forEach((pl) => (pl.hp = Math.max(0, pl.hp)))
+        s.phase = 'lost'
+        logLine(s, 'The long dark takes you.')
+      }
       return s
     }
     case 'END_TURN': {
