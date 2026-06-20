@@ -51,6 +51,13 @@ export function BattleScreen({
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
       const k = e.key.toLowerCase()
 
+      // Shift+R quick-restarts from any phase (playtest convenience). Shift so a
+      // stray keypress can't wipe a run.
+      if (e.shiftKey && k === 'r') {
+        dispatch({ type: 'RESTART' })
+        return
+      }
+
       if (cleared) {
         if (e.key >= '1' && e.key <= String(rewardChoices.length)) {
           const card = rewardChoices[Number(e.key) - 1]
@@ -108,9 +115,19 @@ export function BattleScreen({
         <span className="font-mono text-xs uppercase tracking-[0.3em] text-amber-500/70">
           Turing Tables
         </span>
-        <span className="font-mono text-xs text-neutral-500">
-          Trial {Math.min(encounter + 1, total)}/{total} · Round {round}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-xs text-neutral-500">
+            Trial {Math.min(encounter + 1, total)}/{total} · Round {round}
+          </span>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'RESTART' })}
+            title="Restart the run (Shift+R)"
+            className="rounded border border-neutral-700 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-neutral-400 hover:border-amber-500/50 hover:text-amber-300"
+          >
+            ↻ Restart
+          </button>
+        </div>
       </header>
       <p className="-mt-1 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-amber-200/40">
         the longest day · hold the light until dawn
