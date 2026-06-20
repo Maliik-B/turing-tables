@@ -22,6 +22,7 @@ export async function geminiDecideMove(
 ): Promise<EnemyMove | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const started = performance.now()
   try {
     const actions = ['attack', 'block', ...ctx.abilities]
     const abilityDescs = ctx.abilities
@@ -125,5 +126,10 @@ export async function geminiDecideMove(
     return null
   } finally {
     clearTimeout(timer)
+    // Diagnostic: real model latency, to calibrate the randomized "thinking"
+    // delay that masks instant scripted turns. Watch the browser console.
+    console.log(
+      `[TT timing] ${model}: ${Math.round(performance.now() - started)}ms`,
+    )
   }
 }
