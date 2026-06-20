@@ -104,6 +104,10 @@ export interface Enemy {
   remembers: boolean
   // Signature moves beyond attack/block this generation can deploy.
   abilities: IntentType[]
+  // How much of the player's deck the Gemini brain knows (scales up the ladder).
+  cardCount: 'none' | 'observed' | 'full'
+  // Player-facing Gemini passive label (shown only when a key is active).
+  passive: string
 }
 
 // Running tally of how the player has fought across the whole run — fed to the
@@ -136,6 +140,9 @@ export interface GameState {
   reads: { caught: number; falseAccusations: number }
   // Cross-trial behavior dossier for the Mainframe's memory mechanic.
   runStats: RunStats
+  // Distinct card names the player has played THIS fight, for the 'observed'
+  // card-counting tier (ORACLE). Reset each trial.
+  seen: string[]
   // Between-trial card reward: 3 cards offered when a (non-final) trial clears.
   rewardChoices: Card[]
 }

@@ -165,6 +165,7 @@ export function BattleScreen({
             enemy={e}
             thinking={awaitingIntents}
             round={round}
+            gemini={!!apiKey && !!e.model}
           />
         ))}
       </div>

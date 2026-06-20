@@ -19,6 +19,14 @@ export interface BrainContext {
     weak: number
     power: number
   }
+  // The player's deck, scaled by this enemy's card-counting tier. 'observed' =
+  // cards seen played this fight; 'full' = the entire deck list. Absent for
+  // board-reading-only enemies. (Never includes the hand or the draw order.)
+  deck?: {
+    knowledge: 'observed' | 'full'
+    cards: string[]
+    unplayed?: number
+  }
 }
 
 // Shared ability info for both brains: the fixed value the ability uses and a

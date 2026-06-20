@@ -100,6 +100,8 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
     intel: def.intel,
     remembers: !!def.remembers,
     abilities: def.abilities,
+    cardCount: def.cardCount ?? 'none',
+    passive: def.passive ?? '',
   }
 }
 
@@ -111,6 +113,7 @@ function setupEncounter(s: GameState, index: number): void {
   const def = RUN[index]
   s.enemies = def ? [makeEnemy(0, def, s.players.length)] : []
   s.round = 1
+  s.seen = []
   s.calledThisRound = false
   s.awaitingIntents = true
   for (const p of s.players) {
@@ -153,6 +156,7 @@ export function createInitialState(): GameState {
       damageDealt: 0,
       blockGained: 0,
     },
+    seen: [],
     rewardChoices: [],
   }
   setupEncounter(state, 0)
@@ -178,6 +182,7 @@ function clone(s: GameState): GameState {
     calledThisRound: s.calledThisRound,
     reads: { ...s.reads },
     runStats: { ...s.runStats, cardsPlayed: { ...s.runStats.cardsPlayed } },
+    seen: s.seen ? [...s.seen] : [],
     rewardChoices: [...s.rewardChoices],
   }
 }
@@ -381,6 +386,8 @@ export function reducer(state: GameState, action: Action): GameState {
       if (card.type === 'attack') s.runStats.attacks += 1
       else s.runStats.skills += 1
       if (card.sever) s.runStats.severs += 1
+      // Observed card-counting (ORACLE): distinct cards revealed this fight.
+      if (!s.seen.includes(card.name)) s.seen.push(card.name)
 
       // Exhaust cards leave combat instead of going to the discard pile.
       if (!card.exhaust) p.discard.push(card)

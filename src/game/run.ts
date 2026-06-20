@@ -15,6 +15,13 @@ export interface EncounterDef {
   intel: string[]
   // The Mainframe: adapts to the player's behavior across prior trials.
   remembers?: boolean
+  // How much of the player's deck the Gemini brain knows: 'none' = board only,
+  // 'observed' = the cards it has seen you play this fight, 'full' = your whole
+  // deck list from turn 1. Scales up the model ladder.
+  cardCount?: 'none' | 'observed' | 'full'
+  // Short, player-facing label for this enemy's Gemini passive (shown only when
+  // a key is active, since the scripted brain can't do any of it).
+  passive?: string
 }
 
 export const RUN: EncounterDef[] = [
@@ -39,6 +46,8 @@ export const RUN: EncounterDef[] = [
       'Combo: weakens you (−25%), then shields so your softened hits glance off',
       'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted decoys.',
     ],
+    cardCount: 'none',
+    passive: 'Reads your live board',
   },
   {
     name: 'ORACLE-2',
@@ -50,6 +59,8 @@ export const RUN: EncounterDef[] = [
       'Combo: exposes you (Vulnerable, +50%), then strikes the opening',
       'Runs Gemini Flash — sharper. Its decoys are subtler.',
     ],
+    cardCount: 'observed',
+    passive: 'Reads your board · counts the cards you play',
   },
   {
     name: 'THE MAINFRAME',
@@ -63,6 +74,8 @@ export const RUN: EncounterDef[] = [
       'Resists corruption — your DoT takes hold at half strength',
       'Runs Gemini Pro and has studied your prior trials — it adapts to you.',
     ],
+    cardCount: 'full',
+    passive: 'Reads your board · knows your entire deck',
   },
 ]
 
