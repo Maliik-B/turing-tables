@@ -1,6 +1,7 @@
 import { useEffect, useState, type Dispatch } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Action, GameState } from '../game/types'
+import type { GeminiStatus } from '../game/brain'
 import { RUN, modelLabel } from '../game/run'
 import { EnemyPanel } from './EnemyPanel'
 import { PlayerPanel } from './PlayerPanel'
@@ -41,12 +42,14 @@ export function BattleScreen({
   apiKey,
   onApiKey,
   record,
+  apiStatus,
 }: {
   state: GameState
   dispatch: Dispatch<Action>
   apiKey: string
   onApiKey: (key: string) => void
   record: { wins: number; losses: number }
+  apiStatus: GeminiStatus | null
 }) {
   const {
     enemies,
@@ -75,11 +78,16 @@ export function BattleScreen({
   // Sever is introduced when the first Gemini machine (DAEMON, trial 2) arrives.
   // Reset the intro when a new run starts (back at trial 1).
   useEffect(() => {
-    if (encounter === 0) setSeverIntroSeen(false)
+    if (encounter === 0) {
+      setSeverIntroSeen(false)
+      setNudgeDismissed(false)
+    }
   }, [encounter])
   const severIntro =
     !!me && !over && !cleared && encounter === 1 && !severIntroSeen
   const [showDeck, setShowDeck] = useState(false)
+  // Keyless reminder that the real Gemini machine is being faked; dismissible.
+  const [nudgeDismissed, setNudgeDismissed] = useState(false)
 
   // Full keyboard control so the game is playable without precise taps:
   //   1-9 play the card in that slot · E end turn · C call imitation
@@ -203,7 +211,7 @@ export function BattleScreen({
           type="password"
           value={apiKey}
           onChange={(e) => onApiKey(e.target.value)}
-          placeholder="Gemini API key (optional — plays scripted without one)"
+          placeholder="Gemini API key (optional, plays scripted without one)"
           className="flex-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 font-mono text-neutral-300 placeholder:text-neutral-600 focus:border-amber-500/50 focus:outline-none"
         />
       </div>
@@ -212,6 +220,38 @@ export function BattleScreen({
           Key active. ELIZA-0 is a rule-based automaton; the real Gemini machine
           wakes at DAEMON-1.
         </p>
+      )}
+      {!apiKey && encounter >= 1 && !over && !cleared && !nudgeDismissed && (
+        <div className="-mt-2 flex items-start justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+          <p className="font-mono text-[11px] leading-snug text-amber-200/90">
+            <span className="text-amber-300">
+              {cur?.name ?? 'This machine'} runs real Gemini.
+            </span>{' '}
+            Right now it is faking it (scripted). Paste a free key in the field
+            above to face the actual machine and hunt its fakes. That is the
+            whole game.
+          </p>
+          <button
+            type="button"
+            onClick={() => setNudgeDismissed(true)}
+            className="shrink-0 rounded border border-neutral-700 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-neutral-400 transition-colors hover:border-amber-500/50 hover:text-amber-300"
+          >
+            Skip
+          </button>
+        </div>
+      )}
+      {curIsGemini && apiStatus === 'rate_limit' && (
+        <div className="-mt-2 rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 font-mono text-[11px] leading-snug text-amber-200/90">
+          ⚠ Gemini quota reached. The machine is running its scripted imitation
+          until your free quota resets (midnight Pacific, ~3 AM ET). The run
+          plays on.
+        </div>
+      )}
+      {curIsGemini && apiStatus === 'bad_key' && (
+        <div className="-mt-2 rounded-lg border border-red-600/40 bg-red-600/10 px-3 py-2 font-mono text-[11px] leading-snug text-red-200/90">
+          ⚠ Gemini rejected this key. Check it at aistudio.google.com/apikey and
+          paste it again above.
+        </div>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">

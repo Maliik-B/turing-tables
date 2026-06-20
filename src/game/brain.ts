@@ -1,7 +1,9 @@
 import type { BrainContext, EnemyMove } from './opponent'
 import type { RunStats } from './types'
 import { decideEnemyMove } from './opponent'
-import { geminiDecideMove } from './gemini'
+import { geminiDecideMove, type GeminiStatus } from './gemini'
+
+export type { GeminiStatus }
 
 export interface BrainOptions {
   apiKey?: string | null
@@ -21,7 +23,7 @@ const GEMINI_SHARE = 0.7
 export async function decideMove(
   ctx: BrainContext,
   opts: BrainOptions = {},
-): Promise<EnemyMove> {
+): Promise<EnemyMove & { status?: GeminiStatus }> {
   const tryGemini =
     !!opts.apiKey &&
     !!opts.model &&
@@ -29,13 +31,16 @@ export async function decideMove(
     Math.random() < GEMINI_SHARE
   if (tryGemini) {
     try {
-      const move = await geminiDecideMove(
+      const { move, status } = await geminiDecideMove(
         ctx,
         opts.apiKey as string,
         opts.model as string,
         opts.memory,
       )
-      if (move) return move
+      // Carry the API status onto the move (or onto the scripted fallback when
+      // Gemini failed) so the UI can flag a rate-limited or rejected key.
+      if (move) return { ...move, status }
+      return { ...decideEnemyMove(ctx), status }
     } catch {
       // fall through to scripted
     }

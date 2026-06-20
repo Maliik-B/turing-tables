@@ -6,20 +6,27 @@ const ENDPOINT = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 const TIMEOUT_MS = 5000
 
+// Outcome of a Gemini call, so the UI can tell a keyed player when their free
+// quota is exhausted (rate_limit) or their key is bad, instead of silently
+// serving the scripted fallback and looking broken.
+export type GeminiStatus = 'ok' | 'rate_limit' | 'bad_key' | 'error'
+
 const BASE_SYSTEM = `You are THE MACHINE, a coldly tactical AI opponent in a one-on-one card duel against a human. Each turn you choose ONE move.
 - "attack": deal damage to the human (value 8-14).
 - "block": shield yourself (value 8). Never block twice in a row, and never block when your HP is low — press the advantage instead.`
 
-// Calls Gemini (the given model) for the Machine's next move. Returns null on
-// ANY failure so the orchestrator falls back to the scripted brain. The move
-// set includes this enemy's signature abilities (ctx.abilities). `memory`, when
-// present, is a dossier of the player's prior-trial behavior (Mainframe).
+// Calls Gemini (the given model) for the Machine's next move. Returns the move
+// plus a status the UI can surface (rate_limit / bad_key) so a keyed player
+// isn't silently dropped to the scripted fallback. On any failure move is null
+// and the orchestrator falls back to the scripted brain. The move set includes
+// this enemy's signature abilities (ctx.abilities); `memory`, when present, is
+// a dossier of the player's prior-trial behavior (Mainframe).
 export async function geminiDecideMove(
   ctx: BrainContext,
   apiKey: string,
   model: string,
   memory?: string,
-): Promise<EnemyMove | null> {
+): Promise<{ move: EnemyMove | null; status: GeminiStatus }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   const started = performance.now()
@@ -97,12 +104,20 @@ export async function geminiDecideMove(
       body: JSON.stringify(body),
       signal: controller.signal,
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      const status: GeminiStatus =
+        res.status === 429
+          ? 'rate_limit'
+          : res.status === 400 || res.status === 401 || res.status === 403
+            ? 'bad_key'
+            : 'error'
+      return { move: null, status }
+    }
 
     const data = await res.json()
     const text: string | undefined =
       data?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!text) return null
+    if (!text) return { move: null, status: 'error' }
 
     const parsed = JSON.parse(text) as { action?: string; value?: number }
     const act: IntentType = (actions as string[]).includes(parsed.action ?? '')
@@ -121,9 +136,12 @@ export async function geminiDecideMove(
       value = ABILITY_INFO[act]?.value ?? 2
     }
 
-    return { intent: { type: act, value }, source: 'gemini' }
+    return {
+      move: { intent: { type: act, value }, source: 'gemini' },
+      status: 'ok',
+    }
   } catch {
-    return null
+    return { move: null, status: 'error' }
   } finally {
     clearTimeout(timer)
     // Diagnostic: real model latency, to calibrate the randomized "thinking"

@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { createInitialState, reducer } from './game/engine'
 import { decideMove, buildDossier } from './game/brain'
+import type { GeminiStatus } from './game/brain'
 import { BattleScreen } from './components/BattleScreen'
 import { MenuScreen } from './components/MenuScreen'
 import { IntroScroll } from './components/IntroScroll'
@@ -8,6 +9,7 @@ import { Backdrop } from './components/Backdrop'
 
 const KEY_STORAGE = 'tt_gemini_key'
 const RECORD_STORAGE = 'tt_record'
+const STATUS_STORAGE = 'tt_api_status'
 
 type Screen = 'menu' | 'intro' | 'game'
 
@@ -18,10 +20,30 @@ function App() {
   const [apiKey, setApiKey] = useState<string>(
     () => localStorage.getItem(KEY_STORAGE) ?? '',
   )
+  const [apiStatus, setApiStatus] = useState<GeminiStatus | null>(
+    () => (localStorage.getItem(STATUS_STORAGE) as GeminiStatus | null) || null,
+  )
+  // Persist the last Gemini outcome so the menu can warn about a maxed or bad
+  // key on a fresh load (there is no in-game return to the menu otherwise).
+  const recordApiStatus = (s: GeminiStatus) => {
+    setApiStatus(s)
+    try {
+      localStorage.setItem(STATUS_STORAGE, s)
+    } catch {
+      // ignore storage failures
+    }
+  }
   const [screen, setScreen] = useState<Screen>('menu')
 
   const updateKey = (k: string) => {
     setApiKey(k)
+    // A changed key invalidates any prior rate-limit / bad-key warning.
+    setApiStatus(null)
+    try {
+      localStorage.removeItem(STATUS_STORAGE)
+    } catch {
+      // ignore
+    }
     if (k) localStorage.setItem(KEY_STORAGE, k)
     else localStorage.removeItem(KEY_STORAGE)
   }
@@ -123,8 +145,20 @@ function App() {
       ])
       // Apply only if this is still the current round; a later round resets the
       // key, so a stale in-flight decision is dropped instead of dispatched.
-      if (decidedIntentKey.current === key)
+      if (decidedIntentKey.current === key) {
+        // Surface API health so a keyed player isn't confused when the machine
+        // quietly falls back to scripted: prefer the most actionable signal.
+        const statuses = intents.map((i) => i.status)
+        const next: GeminiStatus | null = statuses.includes('bad_key')
+          ? 'bad_key'
+          : statuses.includes('rate_limit')
+            ? 'rate_limit'
+            : statuses.includes('ok')
+              ? 'ok'
+              : null
+        if (next) recordApiStatus(next)
         dispatch({ type: 'SET_INTENTS', intents })
+      }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -181,6 +215,7 @@ function App() {
           onApiKey={updateKey}
           onBegin={() => setScreen('intro')}
           record={record}
+          apiStatus={apiStatus}
         />
       )}
       {screen === 'intro' && <IntroScroll onContinue={() => setScreen('game')} />}
@@ -191,6 +226,7 @@ function App() {
           apiKey={apiKey}
           onApiKey={updateKey}
           record={record}
+          apiStatus={apiStatus}
         />
       )}
     </div>
