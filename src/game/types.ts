@@ -23,6 +23,8 @@ export interface CardDef {
   // Temporary attack buff: +power damage per attack for powerTurns turns.
   power?: number
   powerTurns?: number
+  // Grant lifesteal for this many turns: attacks heal half the damage they land.
+  lifesteal?: number
   // Restore this much of the player's HP (capped at max).
   heal?: number
   // The player loses this much HP as the cost of playing the card.
@@ -69,6 +71,8 @@ export interface Combatant {
   // Temporary flat attack bonus (Overdrive) and how many turns it lasts.
   power: number
   powerTurns: number
+  // Turns of lifesteal remaining: attacks heal half the damage they land.
+  lifestealTurns: number
   // The persistent deck across the run (grows via rewards). Working piles
   // below are rebuilt from this at the start of each trial.
   collection: Card[]

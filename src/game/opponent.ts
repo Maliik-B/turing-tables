@@ -39,12 +39,12 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
     gemini: '"weaken": apply 2 Weak to the human so their attacks hit 25% softer.',
   },
   expose: {
-    value: 2,
-    gemini: '"expose": apply 2 Vulnerable to the human so they take 50% more damage.',
+    value: 3,
+    gemini: '"expose": apply Vulnerable for 3 turns so the human takes 50% more damage — then strike into it.',
   },
   drain: {
     value: 9,
-    gemini: '"drain": deal 9 damage to the human and heal yourself for half of it.',
+    gemini: '"drain": deal 9 damage to the human and heal yourself for half of what lands (block denies the heal).',
   },
 }
 
@@ -60,9 +60,9 @@ export function decideEnemyMove(ctx: BrainContext): EnemyMove {
   const enraged = ctx.hpRatio <= 0.35
   const has = (a: IntentType) => ctx.abilities.includes(a)
   const attack = (): EnemyMove => {
-    const base = 8 + Math.floor(Math.random() * 5) // 8-12
+    const base = 9 + Math.floor(Math.random() * 5) // 9-13
     return {
-      intent: { type: 'attack', value: enraged ? base + 4 : base },
+      intent: { type: 'attack', value: enraged ? base + 5 : base },
       source: 'scripted',
     }
   }
