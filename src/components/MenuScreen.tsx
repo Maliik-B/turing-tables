@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { motion } from 'motion/react'
+import { SolsticeSun } from './SolsticeSun'
 
 export function MenuScreen({
   apiKey,
@@ -21,13 +23,33 @@ export function MenuScreen({
   }, [onBegin])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">
-      <p className="font-mono text-xs uppercase tracking-[0.35em] text-amber-200/50">
+    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">
+      {/* Solstice sun rising behind the title. */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[20%] -z-10 -translate-x-1/2"
+        initial={{ y: 70, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 1.8, ease: 'easeOut' }}
+      >
+        <SolsticeSun size={360} intensity={0.85} />
+      </motion.div>
+
+      <p className="font-mono text-xs uppercase tracking-[0.4em] text-amber-200/60">
         June Solstice · The Imitation Game
       </p>
-      <h1 className="text-6xl font-bold tracking-tight text-neutral-50 sm:text-7xl">
-        Turing Tables
+      <h1
+        className="font-mono text-5xl font-bold uppercase leading-[0.95] tracking-[0.16em] text-amber-100 sm:text-6xl"
+        style={{ textShadow: '0 0 36px rgba(251,191,36,0.4)' }}
+      >
+        Turing
+        <br />
+        Tables
       </h1>
+      <div
+        aria-hidden
+        className="-mt-1 h-px w-64 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"
+      />
       <p className="max-w-md leading-relaxed text-neutral-300">
         A deckbuilder against machines that may — or may not — be thinking.
         Descend their generations on the longest day and reach the Mainframe

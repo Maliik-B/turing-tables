@@ -120,19 +120,40 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.awaitingIntents, state.phase, state.round, apiKey, screen])
 
-  const glowOpacity =
-    screen === 'game' ? 0.72 + (0.28 * Math.min(state.round, 10)) / 10 : 0.55
+  // Dawn-as-an-arc: the light warms + rises across the run (indigo night → gold
+  // dawn), floods on a win, drains cold on a loss. 0 = deep night, 1 = full dawn.
+  const won = state.phase === 'won'
+  const lost = state.phase === 'lost'
+  const progress = screen === 'game' ? Math.min(1, state.encounter / 3) : 0
+  const warmth = won ? 1 : lost ? 0 : 0.3 + 0.55 * progress
+  const dawnHeight = 60 + warmth * 52 // vh of the warm horizon glow
+  const dawnAlpha = lost ? 0.1 : 0.38 + warmth * 0.5
+  const nightAlpha = lost ? 0.92 : 0.6 - warmth * 0.42 // night recedes toward dawn
 
   return (
     <div className="min-h-screen text-neutral-100">
-      {/* Solstice dawn glow — backs every screen; rises as the fight wears on. */}
+      {/* Cool night sky — deepest at Trial 1 and on a loss; recedes toward dawn. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[88vh]"
+        className="pointer-events-none fixed inset-0 -z-20 transition-opacity duration-1000"
         style={{
           background:
-            'radial-gradient(110% 95% at 50% 132%, rgba(251,191,36,0.42), rgba(217,119,6,0.16) 50%, transparent 78%)',
-          opacity: glowOpacity,
+            'radial-gradient(125% 80% at 50% -12%, rgba(30,27,75,0.9), rgba(15,23,42,0.5) 45%, transparent 75%)',
+          opacity: nightAlpha,
+        }}
+      />
+      {/* Warm dawn horizon — rises in height + warmth with the run; gold on a win,
+          a cold blue smear on a loss. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 transition-all duration-1000"
+        style={{
+          height: `${dawnHeight}vh`,
+          background: lost
+            ? 'radial-gradient(120% 100% at 50% 138%, rgba(30,58,138,0.22), transparent 68%)'
+            : `radial-gradient(125% 100% at 50% 136%, rgba(251,191,36,${dawnAlpha}), rgba(217,119,6,${
+                dawnAlpha * 0.45
+              }) 45%, transparent 78%)`,
         }}
       />
       {screen === 'menu' && (

@@ -6,6 +6,7 @@ import { EnemyPanel } from './EnemyPanel'
 import { PlayerPanel } from './PlayerPanel'
 import { CardView } from './CardView'
 import { DossierPanel } from './DossierPanel'
+import { SolsticeSun } from './SolsticeSun'
 import { CARDS } from '../game/cards'
 
 // Card-counting confidence for the Gemini passive: rises as the player's deck
@@ -440,12 +441,34 @@ export function BattleScreen({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-neutral-950/85 px-6 text-center backdrop-blur"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-hidden px-6 text-center backdrop-blur"
+            style={{
+              background:
+                phase === 'won'
+                  ? 'radial-gradient(130% 100% at 50% 128%, rgba(251,191,36,0.55), rgba(124,45,18,0.5) 42%, rgba(10,12,22,0.94) 82%)'
+                  : 'radial-gradient(120% 100% at 50% 45%, rgba(30,58,138,0.32), rgba(4,4,10,0.96) 72%)',
+            }}
           >
+            {phase === 'won' && (
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute bottom-[-140px] left-1/2 -z-10 -translate-x-1/2"
+                initial={{ y: 150, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 2, ease: 'easeOut' }}
+              >
+                <SolsticeSun size={480} intensity={1} />
+              </motion.div>
+            )}
             <h2
               className={`text-4xl font-bold ${
-                phase === 'won' ? 'text-amber-300' : 'text-red-400'
+                phase === 'won' ? 'text-amber-100' : 'text-red-400'
               }`}
+              style={
+                phase === 'won'
+                  ? { textShadow: '0 0 44px rgba(251,191,36,0.55)' }
+                  : undefined
+              }
             >
               {phase === 'won'
                 ? 'Dawn breaks. The Mainframe goes dark.'
