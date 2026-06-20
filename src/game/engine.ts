@@ -155,6 +155,7 @@ export function createInitialState(): GameState {
       accuses: 0,
       damageDealt: 0,
       blockGained: 0,
+      rounds: 0,
     },
     seen: [],
     rewardChoices: [],
@@ -268,6 +269,7 @@ function runEnemyPhase(s: GameState): void {
   }
 
   s.round += 1
+  s.runStats.rounds = (s.runStats.rounds ?? 0) + 1
   const aliveSeats = s.players
     .map((p, i) => (p.hp > 0 ? i : -1))
     .filter((i) => i >= 0)
@@ -483,6 +485,15 @@ export function reducer(state: GameState, action: Action): GameState {
       for (const p of s.players) {
         if (p.hp <= 0) continue
         p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * HEAL_FRACTION))
+      }
+      // Clearing ELIZA (gen-0) is where Sever starts to matter — the real Gemini
+      // machines begin next — so the card joins the deck now (intro'd in-fight).
+      if (s.encounter === 0) {
+        const me = s.players[s.activeSeat]
+        if (me) {
+          me.collection.push(instantiate('sever'))
+          logLine(s, "You learn to Sever the machine's link.")
+        }
       }
       setupEncounter(s, s.encounter + 1)
       s.phase = 'player'

@@ -120,6 +120,8 @@ export interface RunStats {
   accuses: number
   damageDealt: number
   blockGained: number
+  // Total rounds played across the whole run (for the end-of-run summary).
+  rounds: number
 }
 
 export type Phase = 'player' | 'cleared' | 'won' | 'lost'

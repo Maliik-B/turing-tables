@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch } from 'react'
+import { useEffect, useState, type Dispatch } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Action, GameState } from '../game/types'
 import { RUN, modelLabel } from '../game/run'
@@ -6,6 +6,7 @@ import { EnemyPanel } from './EnemyPanel'
 import { PlayerPanel } from './PlayerPanel'
 import { CardView } from './CardView'
 import { DossierPanel } from './DossierPanel'
+import { CARDS } from '../game/cards'
 
 export function BattleScreen({
   state,
@@ -41,6 +42,15 @@ export function BattleScreen({
   const curIsGemini = !!apiKey && !!cur?.model
   const targetSevered = !!cur && cur.severedUntilRound >= round
 
+  const [severIntroSeen, setSeverIntroSeen] = useState(false)
+  // Sever is introduced when the first Gemini machine (DAEMON, trial 2) arrives.
+  // Reset the intro when a new run starts (back at trial 1).
+  useEffect(() => {
+    if (encounter === 0) setSeverIntroSeen(false)
+  }, [encounter])
+  const severIntro =
+    !!me && !over && !cleared && encounter === 1 && !severIntroSeen
+
   // Full keyboard control so the game is playable without precise taps:
   //   1-9 play the card in that slot · E end turn · C call imitation
   //   reward screen: 1-3 pick a card, S/0 skip · over screen: R restart
@@ -55,6 +65,11 @@ export function BattleScreen({
       // stray keypress can't wipe a run.
       if (e.shiftKey && k === 'r') {
         dispatch({ type: 'RESTART' })
+        return
+      }
+
+      if (severIntro) {
+        if (e.key === 'Enter' || e.key === ' ') setSeverIntroSeen(true)
         return
       }
 
@@ -100,6 +115,7 @@ export function BattleScreen({
     me,
     cleared,
     over,
+    severIntro,
     rewardChoices,
     curIsGemini,
     calledThisRound,
@@ -274,6 +290,37 @@ export function BattleScreen({
       </div>
 
       <AnimatePresence>
+        {severIntro && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-neutral-950/90 px-6 text-center backdrop-blur"
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-amber-400/70">
+              A new tool
+            </p>
+            <h2 className="text-2xl font-bold text-amber-200">
+              You learn to Sever the link.
+            </h2>
+            <p className="max-w-md text-sm leading-relaxed text-neutral-400">
+              From here the machines think with Gemini. Sever cuts a machine's
+              link for two turns — forcing its dumb scripted routines, so it
+              plays blind and predictable while you press the advantage.
+            </p>
+            <CardView
+              card={{ ...CARDS.sever, uid: -1 }}
+              playable={false}
+              onClick={() => {}}
+            />
+            <button
+              type="button"
+              onClick={() => setSeverIntroSeen(true)}
+              className="mt-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-6 py-2 font-semibold text-amber-300 hover:bg-amber-500/20"
+            >
+              Take it (Enter)
+            </button>
+          </motion.div>
+        )}
         {cleared && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -323,12 +370,50 @@ export function BattleScreen({
                 ? 'Dawn breaks. The Mainframe goes dark.'
                 : 'The long dark takes you.'}
             </h2>
-            {apiKey && reads.caught + reads.falseAccusations > 0 && (
-              <p className="font-mono text-sm text-neutral-400">
-                Imitations caught: {reads.caught} · Wrong reads:{' '}
-                {reads.falseAccusations}
-              </p>
-            )}
+            <div className="grid w-full max-w-xs grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs">
+              <span className="text-left text-neutral-500">Rounds</span>
+              <span className="text-right text-neutral-200">
+                {runStats.rounds ?? 0}
+              </span>
+              <span className="text-left text-neutral-500">Damage dealt</span>
+              <span className="text-right text-neutral-200">
+                {runStats.damageDealt}
+              </span>
+              <span className="text-left text-neutral-500">Block gained</span>
+              <span className="text-right text-neutral-200">
+                {runStats.blockGained}
+              </span>
+              <span className="text-left text-neutral-500">Attacks / Skills</span>
+              <span className="text-right text-neutral-200">
+                {runStats.attacks} / {runStats.skills}
+              </span>
+              {runStats.severs > 0 && (
+                <>
+                  <span className="text-left text-neutral-500">Severs used</span>
+                  <span className="text-right text-neutral-200">
+                    {runStats.severs}
+                  </span>
+                </>
+              )}
+              {phase === 'won' && me && (
+                <>
+                  <span className="text-left text-neutral-500">HP remaining</span>
+                  <span className="text-right text-emerald-300">
+                    {Math.max(0, me.hp)}/{me.maxHp}
+                  </span>
+                </>
+              )}
+              {apiKey && reads.caught + reads.falseAccusations > 0 && (
+                <>
+                  <span className="text-left text-neutral-500">
+                    Reads caught / wrong
+                  </span>
+                  <span className="text-right text-fuchsia-300">
+                    {reads.caught} / {reads.falseAccusations}
+                  </span>
+                </>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => dispatch({ type: 'RESTART' })}
