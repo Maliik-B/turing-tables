@@ -39,10 +39,17 @@ function drawInto(c: Combatant, n: number): void {
   }
 }
 
-function dealDamage(target: { hp: number; block: number }, amount: number): void {
+// Apply damage through block; returns the HP actually lost (so lifesteal and
+// drain can heal off what truly landed, and block denies them).
+function dealDamage(
+  target: { hp: number; block: number },
+  amount: number,
+): number {
   const absorbed = Math.min(target.block, amount)
   target.block -= absorbed
-  target.hp -= amount - absorbed
+  const hpLoss = amount - absorbed
+  target.hp -= hpLoss
+  return hpLoss
 }
 
 // Weak reduces dealt damage 25%; Vulnerable increases taken damage 50%.
@@ -67,6 +74,7 @@ function makePlayer(seat: number): Combatant {
     weak: 0,
     power: 0,
     powerTurns: 0,
+    lifestealTurns: 0,
     collection: STARTER_DECK.map(instantiate),
     deck: [],
     hand: [],
@@ -125,6 +133,7 @@ function setupEncounter(s: GameState, index: number): void {
     p.weak = 0
     p.power = 0
     p.powerTurns = 0
+    p.lifestealTurns = 0
     p.energy = p.maxEnergy
     p.ended = false
     p.deck = shuffle([...p.collection])
@@ -234,11 +243,12 @@ function runEnemyPhase(s: GameState): void {
     const it = e.intent
     if (it.type === 'attack' || it.type === 'drain') {
       const amount = modified(it.value, e.weak, target.vulnerable)
-      dealDamage(target, amount)
+      const dealt = dealDamage(target, amount)
       if (it.type === 'drain') {
-        const healed = Math.floor(amount / 2)
+        // Heal scales with damage that LANDS, so blocking denies the heal.
+        const healed = Math.floor(dealt / 2)
         e.hp = Math.min(e.maxHp, e.hp + healed)
-        logLine(s, `${e.name} drains ${target.name} for ${amount}, healing ${healed}.`)
+        logLine(s, `${e.name} drains ${target.name} for ${dealt}, healing ${healed}.`)
       } else {
         logLine(s, `${e.name} attacks ${target.name} for ${amount}.`)
       }
@@ -296,6 +306,7 @@ function runEnemyPhase(s: GameState): void {
       p.powerTurns -= 1
       if (p.powerTurns === 0) p.power = 0
     }
+    if ((p.lifestealTurns ?? 0) > 0) p.lifestealTurns -= 1
     p.energy = p.maxEnergy
     drawInto(p, HAND_SIZE)
   }
@@ -323,9 +334,16 @@ export function reducer(state: GameState, action: Action): GameState {
           p.weak,
           enemy.vulnerable,
         )
-        dealDamage(enemy, amount)
+        const dealt = dealDamage(enemy, amount)
         s.runStats.damageDealt += amount
         logLine(s, `${p.name} plays ${card.name} → ${amount} dmg.`)
+        if ((p.lifestealTurns ?? 0) > 0 && dealt > 0) {
+          const healed = Math.floor(dealt / 2)
+          if (healed > 0) {
+            p.hp = Math.min(p.maxHp, p.hp + healed)
+            logLine(s, `${p.name} drains ${healed} from the wound.`)
+          }
+        }
       }
       if (card.block) {
         p.block += card.block
@@ -380,6 +398,13 @@ export function reducer(state: GameState, action: Action): GameState {
         logLine(
           s,
           `${p.name} plays ${card.name} (+${card.power} attack damage for ${card.powerTurns} turns).`,
+        )
+      }
+      if (card.lifesteal) {
+        p.lifestealTurns = Math.max(p.lifestealTurns ?? 0, card.lifesteal)
+        logLine(
+          s,
+          `${p.name} plays ${card.name} — attacks drain life for ${card.lifesteal} turns.`,
         )
       }
       // Track the player's behavior across the run for the Mainframe's memory.

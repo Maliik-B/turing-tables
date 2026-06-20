@@ -33,6 +33,14 @@ export function PlayerPanel({ player }: { player: Combatant }) {
               PWR +{player.power} · {player.powerTurns}t
             </span>
           )}
+          {player.lifestealTurns > 0 && (
+            <span
+              title="Lifesteal: your attacks heal you for half the damage they land."
+              className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-medium text-rose-300"
+            >
+              ◈ Lifesteal {player.lifestealTurns}t
+            </span>
+          )}
           {player.block > 0 && (
             <span className="rounded bg-sky-500/20 px-2 py-0.5 text-xs text-sky-300">
               🛡 {player.block}
