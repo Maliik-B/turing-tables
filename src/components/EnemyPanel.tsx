@@ -1,5 +1,6 @@
 import type { Enemy } from '../game/types'
 import { StatBar } from './StatBar'
+import { MachineSigil } from './MachineSigil'
 
 export function EnemyPanel({
   enemy,
@@ -44,7 +45,8 @@ export function EnemyPanel({
       }`}
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className="font-mono text-xs uppercase tracking-[0.2em] text-red-400">
+        <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-red-400">
+          <MachineSigil name={enemy.name} className="shrink-0" />
           {enemy.name}
         </span>
         <div className="flex items-center gap-2 text-sm">
