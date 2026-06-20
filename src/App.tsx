@@ -67,7 +67,7 @@ function App() {
     if (!state.awaitingIntents || state.phase !== 'player') return
     let cancelled = false
     const alive = state.enemies.filter((e) => e.hp > 0)
-    const minThink = apiKey ? 900 + Math.floor(Math.random() * 900) : 150
+    const minThink = apiKey ? 1100 + Math.floor(Math.random() * 1100) : 150
     void (async () => {
       const [intents] = await Promise.all([
         Promise.all(
