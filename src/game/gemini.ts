@@ -7,7 +7,7 @@ const ENDPOINT = (model: string) =>
 const TIMEOUT_MS = 8000
 
 const BASE_SYSTEM = `You are THE MACHINE, a coldly tactical AI opponent in a one-on-one card duel against a human. Each turn you choose ONE move.
-- "attack": deal damage to the human (value 9-16).
+- "attack": deal damage to the human (value 8-14).
 - "block": shield yourself (value 8). Never block twice in a row, and never block when your HP is low — press the advantage instead.`
 
 // Calls Gemini (the given model) for the Machine's next move. Returns null on
@@ -112,7 +112,7 @@ export async function geminiDecideMove(
     let value: number
     if (act === 'attack') {
       value = Number(parsed.value)
-      value = Number.isFinite(value) ? Math.max(8, Math.min(17, Math.round(value))) : 11
+      value = Number.isFinite(value) ? Math.max(6, Math.min(16, Math.round(value))) : 10
     } else if (act === 'block') {
       value = Number(parsed.value)
       value = Number.isFinite(value) ? Math.max(5, Math.min(12, Math.round(value))) : 8
