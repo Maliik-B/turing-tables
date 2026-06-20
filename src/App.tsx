@@ -59,6 +59,8 @@ function App() {
     }
   }, [state.phase])
 
+  // One-decision-per-round guard for the intent decider (see the effect below).
+  const decidedIntentKey = useRef<string | null>(null)
   // Resolve the Machine's next intent asynchronously (Gemini -> scripted
   // fallback) once we're in a fight. A randomized "thinking" delay (with a key)
   // covers every turn so the instant scripted (dummy) turns can't be told from
@@ -66,7 +68,13 @@ function App() {
   useEffect(() => {
     if (screen !== 'game') return
     if (!state.awaitingIntents || state.phase !== 'player') return
-    let cancelled = false
+    // Decide a round's intents exactly once. React StrictMode double-invokes
+    // effects in dev, which would otherwise fire (and bill) two Gemini calls
+    // per round; this key guard collapses them to one. runId keeps the key
+    // unique across restarts, where encounter+round repeat.
+    const key = `${state.runId}:${state.encounter}:${state.round}`
+    if (decidedIntentKey.current === key) return
+    decidedIntentKey.current = key
     const alive = state.enemies.filter((e) => e.hp > 0)
     const minThink = apiKey ? 1100 + Math.floor(Math.random() * 1100) : 150
     void (async () => {
@@ -113,13 +121,21 @@ function App() {
         ),
         new Promise((r) => setTimeout(r, minThink)),
       ])
-      if (!cancelled) dispatch({ type: 'SET_INTENTS', intents })
+      // Apply only if this is still the current round; a later round resets the
+      // key, so a stale in-flight decision is dropped instead of dispatched.
+      if (decidedIntentKey.current === key)
+        dispatch({ type: 'SET_INTENTS', intents })
     })()
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.awaitingIntents, state.phase, state.round, apiKey, screen])
+  }, [
+    state.awaitingIntents,
+    state.phase,
+    state.round,
+    state.encounter,
+    state.runId,
+    apiKey,
+    screen,
+  ])
 
   // Dawn-as-an-arc: the light warms + rises across the run (indigo night → gold
   // dawn), floods on a win, drains cold on a loss. 0 = deep night, 1 = full dawn.
