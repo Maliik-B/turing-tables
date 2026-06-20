@@ -205,11 +205,12 @@ function runEnemyPhase(s: GameState): void {
   // Corruption bites first: it ignores block and can finish a machine before it
   // acts, then wanes by 1. (DoT resolves at the start of the enemy phase.)
   for (const e of s.enemies) {
-    if (e.hp <= 0 || e.corruption <= 0) continue
-    e.hp -= e.corruption
-    s.runStats.damageDealt += e.corruption
-    logLine(s, `Corruption eats ${e.name} for ${e.corruption}.`)
-    e.corruption -= 1
+    const corr = e.corruption ?? 0
+    if (e.hp <= 0 || corr <= 0) continue
+    e.hp -= corr
+    s.runStats.damageDealt += corr
+    logLine(s, `Corruption eats ${e.name} for ${corr}.`)
+    e.corruption = corr - 1
   }
   if (resolveIfCleared(s)) return
 
@@ -271,8 +272,9 @@ function runEnemyPhase(s: GameState): void {
   for (const p of s.players) {
     if (p.hp <= 0) continue
     p.ended = false
-    p.block = p.retainBlock
-    s.runStats.blockGained += p.retainBlock
+    const retained = p.retainBlock ?? 0
+    p.block = retained
+    s.runStats.blockGained += retained
     p.retainBlock = 0
     p.energy = p.maxEnergy
     drawInto(p, HAND_SIZE)
