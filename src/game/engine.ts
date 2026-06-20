@@ -7,6 +7,9 @@ const HAND_SIZE = 5
 const PLAYER_MAX_HP = 50
 
 let uidCounter = 1
+// Increments on every fresh run so the intent decider can key a per-round
+// dedupe that survives RESTART (encounter+round otherwise repeat across runs).
+let runCounter = 1
 function instantiate(key: string): Card {
   return { ...CARDS[key], uid: uidCounter++ }
 }
@@ -170,6 +173,7 @@ export function createInitialState(): GameState {
     },
     seen: [],
     rewardChoices: [],
+    runId: runCounter++,
   }
   setupEncounter(state, 0)
   return state
@@ -196,6 +200,7 @@ function clone(s: GameState): GameState {
     runStats: { ...s.runStats, cardsPlayed: { ...s.runStats.cardsPlayed } },
     seen: s.seen ? [...s.seen] : [],
     rewardChoices: [...s.rewardChoices],
+    runId: s.runId,
   }
 }
 

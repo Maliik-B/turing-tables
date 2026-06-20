@@ -160,6 +160,9 @@ export interface GameState {
   seen: string[]
   // Between-trial card reward: 3 cards offered when a (non-final) trial clears.
   rewardChoices: Card[]
+  // Unique id per run (increments on RESTART). Lets the intent decider dedupe
+  // one decision per round even under React StrictMode's double effect-invoke.
+  runId: number
 }
 
 export type Action =
