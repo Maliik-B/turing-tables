@@ -23,6 +23,12 @@ export interface CardDef {
   // Temporary attack buff: +power damage per attack for powerTurns turns.
   power?: number
   powerTurns?: number
+  // Restore this much of the player's HP (capped at max).
+  heal?: number
+  // The player loses this much HP as the cost of playing the card.
+  selfDamage?: number
+  // This card's block lingers one round (kept, not reset, so it can ramp).
+  linger?: boolean
   // Removed from the deck for the rest of the combat after being played.
   exhaust?: boolean
 }
@@ -55,6 +61,9 @@ export interface Combatant {
   block: number
   // Block carried into the start of the next turn (from "retain" cards).
   retainBlock: number
+  // If true, this turn's leftover block is kept (not reset) next turn — a
+  // lingering defense that stacks toward a ramp (Firewall).
+  keepBlock: boolean
   vulnerable: number
   weak: number
   // Temporary flat attack bonus (Overdrive) and how many turns it lasts.
