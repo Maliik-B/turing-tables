@@ -159,14 +159,32 @@ const HORIZON = (() => {
   })
 
   // burning ruins that ignite progressively as the siege deepens: each site has
-  // a damage threshold and only lights once cityDamage passes it.
-  const sites: Array<{ x: number; y: number; s: number; threshold: number }> = []
+  // a damage threshold and only lights once cityDamage passes it. A site is a
+  // cluster of "wicks" (oval flames) that ignite + die in a staggered, looping
+  // sequence so the fire reads as starting, spreading, and lingering.
+  type Wick = { dx: number; dy: number; r: number; phase: number; hw: number }
+  const sites: Array<{ x: number; y: number; s: number; threshold: number; dur: number; wicks: Wick[] }> = []
   for (let i = 0; i < 7; i++) {
+    const s = 0.85 + rnd() * 0.7
+    const n = 3 + Math.floor(rnd() * 2) // 3-4 wicks
+    const linger = Math.floor(rnd() * n) // one wick stays lit longer
+    const wicks: Wick[] = []
+    for (let k = 0; k < n; k++) {
+      wicks.push({
+        dx: (rnd() - 0.5) * 26 * s,
+        dy: (rnd() - 0.5) * 12 * s,
+        r: (6 + rnd() * 6) * s,
+        phase: 0.2 + (k / Math.max(1, n - 1)) * 0.6,
+        hw: k === linger ? 0.26 : 0.12 + rnd() * 0.05,
+      })
+    }
     sites.push({
       x: 70 + (i / 7) * 1080 + (rnd() - 0.5) * 80,
       y: 208 + rnd() * 56,
-      s: 0.85 + rnd() * 0.7,
+      s,
       threshold: 0.12 + (i / 7) * 0.78 + (rnd() - 0.5) * 0.16,
+      dur: 4.5 + rnd() * 2.6,
+      wicks,
     })
   }
 
@@ -281,35 +299,35 @@ export function Backdrop({
         ))}
         {/* fog fade — dissolve the bases into haze */}
         <rect x="0" y="120" width="1200" height="200" fill="url(#tt-fog-grad)" />
-        {/* burning ruins (progressive): flame tongues + glow + smoke, not ovals.
-            Only sites whose threshold the siege has passed are alight. */}
+        {/* burning ruins (progressive): oval wicks igniting + dying in a
+            staggered loop so the fire starts, spreads, and lingers. Only sites
+            whose threshold the siege has passed are alight. */}
         {HORIZON.sites
           .filter((s) => s.threshold <= cityDamage)
-          .map((s, i) => {
-            const b = s.y + 3
-            return (
-              <g key={`site${i}`}>
-                <ellipse cx={s.x} cy={s.y} rx={13 * s.s} ry={18 * s.s} fill="url(#tt-cityfire)" opacity="0.4" />
-                {[0, 1, 2].map((k) => {
-                  const fx = s.x + (k - 1) * 7 * s.s
-                  const h = (15 + k * 5) * s.s
-                  return (
-                    <path
-                      key={k}
-                      d={`M ${fx} ${b} C ${fx - 5 * s.s} ${b - h * 0.45} ${fx - 2 * s.s} ${b - h * 0.8} ${fx} ${b - h} C ${fx + 2 * s.s} ${b - h * 0.8} ${fx + 5 * s.s} ${b - h * 0.45} ${fx} ${b} Z`}
-                      fill="url(#tt-flame)"
-                    >
-                      <animate attributeName="opacity" values="0.9;0.5;1;0.7" dur={`${0.5 + k * 0.2}s`} repeatCount="indefinite" />
-                    </path>
-                  )
-                })}
-                <ellipse cx={s.x} cy={s.y - 26 * s.s} rx={15 * s.s} ry={19 * s.s} fill="url(#tt-citysmoke)">
-                  <animate attributeName="cy" values={`${s.y - 26 * s.s};${s.y - 46 * s.s};${s.y - 26 * s.s}`} dur="6s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0.8;0.5;0.8" dur="6s" repeatCount="indefinite" />
-                </ellipse>
-              </g>
-            )
-          })}
+          .map((s, i) => (
+            <g key={`site${i}`}>
+              <ellipse cx={s.x} cy={s.y} rx={20 * s.s} ry={15 * s.s} fill="url(#tt-cityfire)" opacity="0.26" />
+              {s.wicks.map((w, k) => {
+                const t0 = Math.max(0.02, w.phase - w.hw)
+                const t2 = Math.min(0.98, w.phase + w.hw)
+                return (
+                  <ellipse key={k} cx={s.x + w.dx} cy={s.y + w.dy} rx={w.r} ry={w.r * 1.4} fill="url(#tt-cityfire)" opacity="0.12">
+                    <animate
+                      attributeName="opacity"
+                      values="0.12;0.12;0.92;0.12;0.12"
+                      keyTimes={`0;${t0.toFixed(2)};${w.phase.toFixed(2)};${t2.toFixed(2)};1`}
+                      dur={`${s.dur}s`}
+                      repeatCount="indefinite"
+                    />
+                  </ellipse>
+                )
+              })}
+              <ellipse cx={s.x} cy={s.y - 24 * s.s} rx={15 * s.s} ry={19 * s.s} fill="url(#tt-citysmoke)">
+                <animate attributeName="cy" values={`${s.y - 24 * s.s};${s.y - 44 * s.s};${s.y - 24 * s.s}`} dur="6s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.75;0.45;0.75" dur="6s" repeatCount="indefinite" />
+              </ellipse>
+            </g>
+          ))}
         <defs>
           <linearGradient id="tt-fog-grad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#07070c" stopOpacity="0" />
