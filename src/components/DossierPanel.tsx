@@ -48,7 +48,11 @@ function observations(s: RunStats): Obs[] {
       sub: 'interrogation · profiling your reads',
       ...conf(s.accuses, 4),
     })
-  if (s.blockGained > 36)
+  // Block as a SHARE of activity, not a raw count: a long aggressive run racks
+  // up forced-survival block without being a turtle (this hit ~46 while playing
+  // 40 attacks), so gate on block out-weighing a third of the damage dealt, with
+  // a volume floor. Genuine turtling clears both; forced mitigation does not.
+  if (s.blockGained >= 40 && s.blockGained > s.damageDealt * 0.3)
     out.push({ find: 'Banks heavy block.', sub: `defense · ${s.blockGained} raised`, ...conf(Math.floor(s.blockGained / 10), 6) })
   return out.slice(0, 5)
 }
