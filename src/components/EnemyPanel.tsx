@@ -7,6 +7,7 @@ export function EnemyPanel({
   thinking,
   round,
   gemini,
+  playerHp,
   confidence,
 }: {
   enemy: Enemy
@@ -14,6 +15,8 @@ export function EnemyPanel({
   round: number
   // True when this enemy is currently running the Gemini brain (a key is set).
   gemini: boolean
+  // The player's current HP, to surface the "no feint into a kill" guarantee.
+  playerHp: number
   // Dynamic card-counting confidence phrase (Gemini tiers), or null.
   confidence: string | null
 }) {
@@ -56,6 +59,11 @@ export function EnemyPanel({
           : it.type === 'weaken'
             ? 'Applies Weak (you deal -25%) — no damage this turn.'
             : 'Applies Vulnerable (you take +50%) — no damage this turn.'
+  // The brain never feints a move that could kill (real hit x1.5 >= your HP),
+  // so at low HP a bluffer's telegraph is trustworthy. Surface that so the
+  // player knows when the read is safe. ~24 covers the worst feintable hit.
+  const feintSafe =
+    gemini && enemy.bluffChance > 0 && playerHp > 0 && playerHp <= 24
   return (
     <div
       className={`group relative rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 ${
@@ -118,6 +126,14 @@ export function EnemyPanel({
             <p className={`text-xs ${intentColor}`} title={intentTitle}>
               {intentText}
             </p>
+            {feintSafe && (
+              <span
+                title="A machine never feints a move that could kill you. At this HP its telegraph is the truth."
+                className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300"
+              >
+                ✓ no feint · telegraph is true
+              </span>
+            )}
             {enemy.vulnerable > 0 && (
               <span
                 title="Vulnerable: this machine takes +50% damage. Number = rounds left."

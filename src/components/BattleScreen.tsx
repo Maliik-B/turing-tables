@@ -286,6 +286,7 @@ export function BattleScreen({
               thinking={awaitingIntents}
               round={round}
               gemini={isGemini}
+              playerHp={me?.hp ?? 0}
               confidence={
                 isGemini ? readConfidence(e.cardCount, me, state.seen ?? []) : null
               }
