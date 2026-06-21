@@ -84,6 +84,29 @@ export function scriptedTaunt(type: IntentType): string {
   return pool[Math.floor(Math.random() * pool.length)] ?? ''
 }
 
+// Reaction lines when the player wrongly Calls Imitation on a real Gemini move:
+// the machine claims the misread as a bait it set. Deliberately hedged ("I
+// wonder if that bait got you") since we can't guarantee it WAS a deliberate
+// bait - a manipulative intelligence takes credit either way, which makes the
+// player second-guess every read. Canned; the Mainframe gets the smugger set.
+const BAIT_TAUNTS = [
+  'I wonder if that bait got you.',
+  'You saw weakness. I let you see it.',
+  'Predictable. You read exactly what I offered.',
+  'Was that my error, or your assumption?',
+  'A flaw, willingly shown. You took it.',
+]
+const BAIT_TAUNTS_MAINFRAME = [
+  'I have studied which lies you believe.',
+  'You took the bait I shaped for you.',
+  'Your instinct is a pattern. I fed it.',
+  'I showed you a weakness. You did the rest.',
+]
+export function baitTaunt(remembers: boolean): string {
+  const pool = remembers ? BAIT_TAUNTS_MAINFRAME : BAIT_TAUNTS
+  return pool[Math.floor(Math.random() * pool.length)] ?? BAIT_TAUNTS[0]
+}
+
 // Public entry: pick a coherent move, then attach a canned line as its "voice".
 export function decideEnemyMove(ctx: BrainContext): EnemyMove {
   const move = decideCore(ctx)
