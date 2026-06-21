@@ -70,10 +70,14 @@ export function MachineColossus({
   }
 
   if (cfg.mode === 'destroy') {
-    // both claws crushing two skyscrapers whose tops reach the visible band
-    for (const sx of [CX - R * 2.4, CX + R * 2.4]) {
-      const topY = CY + R * 0.55
-      const w = R * 0.5
+    // both claws crushing two skyscrapers of DIFFERENT size (each handled its own way)
+    for (const tw of [
+      { dx: -2.5, top: 0.32, w: 0.42 },
+      { dx: 2.4, top: 0.96, w: 0.62 },
+    ]) {
+      const sx = CX + tw.dx * R
+      const topY = CY + R * tw.top
+      const w = R * tw.w
       skyscrapers.push({ x: sx - w / 2, w, topY })
       arm(sx, topY, true)
       fires.push({ x: sx, y: topY, r: R * 0.7 })
@@ -91,8 +95,10 @@ export function MachineColossus({
     }
   }
 
-  // jets harrying the machine with tracer fire (human resistance, live tiers)
-  const jets = live ? Array.from({ length: 2 + t }, (_, i) => ({ y: 64 + i * 24, dir: i % 2 === 0 ? 1 : -1, dur: 7 + (i % 3) * 2 })) : []
+  // human resistance: jets streak past, and the machine picks one off now + then
+  const showJets = live
+  const hitX = CX + (t % 2 === 0 ? 210 : -210)
+  const hitY = 96
 
   const optics: Array<{ x: number; y: number; r: number }> = [{ x: CX, y: CY + R * 0.14, r: R * 0.24 }]
   for (let i = 1; i < cfg.optics; i++) {
@@ -127,28 +133,36 @@ export function MachineColossus({
         </radialGradient>
       </defs>
 
-      {/* fighter jets + tracer fire (behind the machine) */}
-      {jets.map((j, i) => (
-        <g key={i}>
-          <g transform={j.dir > 0 ? '' : 'translate(800 0) scale(-1 1)'}>
-            <g>
-              <path d="M -11 0 L 7 -2.5 L 2 0 L 7 2.5 Z" fill="#0a0a12" stroke="rgba(150,172,205,0.4)" strokeWidth="0.6" />
-              <line x1="-11" y1="0" x2="-30" y2="0" stroke="rgba(150,172,205,0.16)" strokeWidth="1.2" />
-              <animateMotion path={`M -70 ${j.y} L 870 ${j.y}`} dur={`${j.dur}s`} repeatCount="indefinite" />
-            </g>
-          </g>
-        </g>
-      ))}
-      {live &&
-        [0, 1, 2].map((i) => {
-          const tx = CX + (i - 1) * 150
-          const ty = 78 + i * 12
-          return (
-            <line key={`tr${i}`} x1={tx} y1={ty} x2={CX + (i - 1) * 26} y2={CY - R} stroke="#fca5a5" strokeWidth="1" strokeOpacity="0">
-              <animate attributeName="stroke-opacity" values="0;0.55;0;0" dur={`${0.5 + i * 0.25}s`} repeatCount="indefinite" />
-            </line>
-          )
-        })}
+      {/* human resistance: jets streak past; the machine picks one off now + then */}
+      {showJets && (
+        <>
+          {[0, 1].map((i) => {
+            const y = 70 + i * 30
+            const dir = i % 2 === 0 ? 1 : -1
+            return (
+              <g key={`fj${i}`} transform={dir > 0 ? '' : 'translate(800 0) scale(-1 1)'}>
+                <g>
+                  <path d="M -11 0 L 7 -2.5 L 2 0 L 7 2.5 Z" fill="#0a0a12" stroke="rgba(150,172,205,0.4)" strokeWidth="0.6" />
+                  <line x1="-11" y1="0" x2="-28" y2="0" stroke="rgba(150,172,205,0.14)" strokeWidth="1.2" />
+                  <animateMotion path={`M -70 ${y} L 870 ${y}`} dur={`${8 + i * 2}s`} repeatCount="indefinite" />
+                </g>
+              </g>
+            )
+          })}
+          {/* the kill: a beam flash, an explosion, then the jet tumbles from the sky */}
+          <line x1={CX} y1={CY} x2={hitX} y2={hitY} stroke="#fecaca" strokeWidth="2.5">
+            <animate attributeName="opacity" dur="8s" repeatCount="indefinite" keyTimes="0;0.03;0.09;1" values="0;0.95;0;0" />
+          </line>
+          <circle cx={hitX} cy={hitY} r="3" fill="#fde68a">
+            <animate attributeName="opacity" dur="8s" repeatCount="indefinite" keyTimes="0;0.05;0.15;1" values="0;1;0;0" />
+            <animate attributeName="r" dur="8s" repeatCount="indefinite" keyTimes="0;0.05;0.15;1" values="2;12;2;2" />
+          </circle>
+          <path d="M -8 0 L 6 -2 L 1 0 L 6 2 Z" fill="#0a0a12" opacity="0">
+            <animate attributeName="opacity" dur="8s" repeatCount="indefinite" keyTimes="0;0.06;0.36;0.44;1" values="0;1;1;0;0" />
+            <animateMotion dur="8s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.06;0.44;1" keyPoints="0;0;1;1" rotate="auto" path={`M ${hitX} ${hitY} Q ${hitX - 50} ${hitY + 130} ${hitX - 150} 560`} />
+          </path>
+        </>
+      )}
 
       {/* fire glows (the ravaging, legible against the dark) */}
       {fires.map((f, i) => (
@@ -223,12 +237,21 @@ export function MachineColossus({
         </g>
       ))}
 
-      {/* the Mainframe hurls a chunk of debris at you */}
+      {/* the Mainframe hurls debris - mostly INTO the city, occasionally at YOU */}
       {cfg.throws && (
-        <path d="M -7 -5 L 6 -7 L 9 5 L -2 8 Z" fill="#0d0d16" stroke="rgba(150,172,205,0.4)" strokeWidth="1">
-          <animateMotion path={`M ${CX + R * 2} ${CY} Q ${CX + 120} ${CY + 140} ${CX + 210} 640`} dur="3.2s" repeatCount="indefinite" />
-          <animateTransform attributeName="transform" type="scale" additive="sum" values="0.4;0.7;2.6" dur="3.2s" repeatCount="indefinite" />
-        </path>
+        <g fill="#0d0d16" stroke="rgba(150,172,205,0.4)" strokeWidth="1">
+          <path d="M -6 -4 L 6 -6 L 8 4 L -3 7 Z">
+            <animateMotion path={`M ${CX} ${CY} Q ${CX + 210} ${CY - 30} ${CX + 330} ${GROUND - 18}`} dur="2.6s" repeatCount="indefinite" rotate="auto" />
+          </path>
+          <path d="M -6 -4 L 6 -6 L 8 4 L -3 7 Z">
+            <animateMotion path={`M ${CX} ${CY} Q ${CX - 220} ${CY - 22} ${CX - 340} ${GROUND - 8}`} dur="3.5s" repeatCount="indefinite" rotate="auto" />
+          </path>
+          {/* every ~9s one comes for you, growing as it nears */}
+          <path d="M -7 -5 L 7 -7 L 9 5 L -2 8 Z">
+            <animateMotion dur="9s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.4;1" keyPoints="0;1;1" path={`M ${CX} ${CY} Q ${CX + 80} ${CY + 190} ${CX + 200} 640`} />
+            <animateTransform attributeName="transform" type="scale" additive="sum" dur="9s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.4;1" values="0.4;2.6;2.6" />
+          </path>
+        </g>
       )}
     </svg>
   )

@@ -260,9 +260,10 @@ export function BattleScreen({
       )}
       {curIsGemini && apiStatus === 'rate_limit' && (
         <div className="-mt-2 rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 font-mono text-[11px] leading-snug text-amber-200/90">
-          ⚠ Gemini quota reached. The machine is running its scripted imitation
-          until your free quota resets (midnight Pacific, ~3 AM ET), or upgrade
-          your Google AI plan for more. The run plays on.
+          ⚠ {cur?.name} ({modelLabel(cur?.model)}) has hit its free Gemini quota.
+          It runs the scripted imitation until that model's quota resets (midnight
+          Pacific, ~3 AM ET) or you upgrade. Machines on other models still think.
+          The run plays on.
         </div>
       )}
       {curIsGemini && apiStatus === 'bad_key' && (
