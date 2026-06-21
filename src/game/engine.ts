@@ -1,7 +1,7 @@
 import type { Action, Card, Combatant, Enemy, GameState } from './types'
 import { CARDS, STARTER_DECK, REWARD_POOL } from './cards'
 import { RUN, HEAL_FRACTION, type EncounterDef } from './run'
-import { decideEnemyMove } from './opponent'
+import { decideEnemyMove, baitTaunt } from './opponent'
 
 const HAND_SIZE = 5
 const PLAYER_MAX_HP = 50
@@ -507,6 +507,7 @@ export function reducer(state: GameState, action: Action): GameState {
         s.reads.falseAccusations += 1
         dealDamage(me, 4)
         logLine(s, 'Wrong — that was the Machine thinking. -4 HP.')
+        logLine(s, `${e.name}: "${baitTaunt(e.remembers)}"`)
         if (s.players.every((pl) => pl.hp <= 0)) {
           s.players.forEach((pl) => (pl.hp = Math.max(0, pl.hp)))
           s.phase = 'lost'
