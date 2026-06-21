@@ -29,13 +29,15 @@ export function EnemyPanel({
       ? `Intends to attack for ${shownAttack}`
       : it.type === 'drain'
         ? `Intends to drain you for ${shownAttack} (heals itself)`
-        : it.type === 'block'
-          ? `Intends to shield (+${it.value})`
-          : it.type === 'weaken'
-            ? 'Intends to weaken you'
-            : 'Intends to expose you'
+        : it.type === 'sunder'
+          ? `Intends to sunder you for ${shownAttack} (strips your block)`
+          : it.type === 'block'
+            ? `Intends to shield (+${it.value})`
+            : it.type === 'weaken'
+              ? 'Intends to weaken you'
+              : 'Intends to expose you'
   const intentColor =
-    it.type === 'attack' || it.type === 'drain'
+    it.type === 'attack' || it.type === 'drain' || it.type === 'sunder'
       ? 'text-red-300'
       : it.type === 'block'
         ? 'text-sky-300'
@@ -47,8 +49,10 @@ export function EnemyPanel({
       ? 'Deals this much damage. Block reduces it.'
       : it.type === 'drain'
         ? 'Damages you and heals itself for half the damage dealt. Block the hit to deny the heal.'
-        : it.type === 'block'
-          ? 'Shields itself. Its block clears the moment it next acts.'
+        : it.type === 'sunder'
+          ? 'Strips ALL your block, then strikes. Blocking will not stop it — hit back or out-pace it.'
+          : it.type === 'block'
+            ? 'Shields itself. Its block clears the moment it next acts.'
           : it.type === 'weaken'
             ? 'Applies Weak (you deal -25%) — no damage this turn.'
             : 'Applies Vulnerable (you take +50%) — no damage this turn.'

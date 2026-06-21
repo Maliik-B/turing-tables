@@ -49,6 +49,10 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
     value: 10,
     gemini: '"drain": deal 10 damage to the human and heal yourself for half of what lands (block denies the heal).',
   },
+  sunder: {
+    value: 12,
+    gemini: '"sunder": strip ALL of the human\'s block, then deal 12 — use it the moment they hide behind block.',
+  },
 }
 
 // Build a feint: a FALSE intent to telegraph while the real move resolves. A
@@ -57,7 +61,7 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
 // guard. Only thinking (Gemini) machines feint — see decideMove.
 const HARMLESS: IntentType[] = ['block', 'weaken', 'expose']
 export function makeDecoy(real: Intent, ctx: BrainContext): Intent {
-  if (real.type === 'attack' || real.type === 'drain') {
+  if (real.type === 'attack' || real.type === 'drain' || real.type === 'sunder') {
     const pool = HARMLESS.filter(
       (t) => t === 'block' || ctx.abilities.includes(t),
     )
@@ -134,6 +138,15 @@ function decideCore(ctx: BrainContext): EnemyMove {
   const enraged = ctx.hpRatio <= 0.25
   const has = (a: IntentType) => ctx.abilities.includes(a)
   const attack = (): EnemyMove => {
+    // If this machine has adapted Sunder (a turtling player), some of its swings
+    // come through as Sunder — the scripted brain throws it blindly (harmless if
+    // you hold no block), Gemini saves it for when you actually turtle.
+    if (has('sunder') && Math.random() < 0.4) {
+      return {
+        intent: { type: 'sunder', value: ABILITY_INFO.sunder?.value ?? 12 },
+        source: 'scripted',
+      }
+    }
     const base = 9 + Math.floor(Math.random() * 6) // 9-14 (~+15% over the old band)
     return {
       intent: { type: 'attack', value: enraged ? base + 4 : base },

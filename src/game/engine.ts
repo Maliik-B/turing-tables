@@ -1,4 +1,12 @@
-import type { Action, Card, Combatant, Enemy, GameState, Intent } from './types'
+import type {
+  Action,
+  Card,
+  Combatant,
+  Enemy,
+  GameState,
+  Intent,
+  RunStats,
+} from './types'
 import { CARDS, STARTER_DECK, REWARD_POOL } from './cards'
 import { RUN, HEAL_FRACTION, type EncounterDef } from './run'
 import { decideEnemyMove, baitTaunt } from './opponent'
@@ -131,6 +139,22 @@ function reconcileSever(p: Combatant, hasKey: boolean, pastEliza: boolean): void
     p.collection = p.collection.filter((c) => c.key !== 'sever')
 }
 
+// The Mainframe studied your prior trials: if you have leaned on block, it
+// arrives carrying Sunder (strip your guard, then strike) so turtling stops
+// working. Surfaced in its intel so the adaptation reads as a consequence you
+// provoked, not a gotcha. (Block-counter first; purge/thorns are future tiers.)
+function adaptToDossier(enemy: Enemy, stats: RunStats): void {
+  if (!enemy.remembers) return
+  const turtles = stats.blockGained >= 40 || stats.skills > stats.attacks * 1.15
+  if (turtles && !enemy.abilities.includes('sunder')) {
+    enemy.abilities = [...enemy.abilities, 'sunder']
+    enemy.intel = [
+      ...enemy.intel,
+      'ADAPTED to your turtling: Sunder strips your block, then strikes — vary your play.',
+    ]
+  }
+}
+
 // Configure the given trial: spin up its enemy and reset each living player's
 // combat state, rebuilding their deck from their persistent collection (so
 // exhausted cards like Sever return each fight).
@@ -138,6 +162,7 @@ function setupEncounter(s: GameState, index: number): void {
   s.encounter = index
   const def = RUN[index]
   s.enemies = def ? [makeEnemy(0, def, s.players.length)] : []
+  if (s.enemies[0]) adaptToDossier(s.enemies[0], s.runStats)
   s.round = 1
   s.seen = []
   s.calledThisRound = false
@@ -234,11 +259,13 @@ function intentLabel(i: Intent): string {
     ? 'Attack'
     : i.type === 'drain'
       ? 'Drain'
-      : i.type === 'block'
-        ? 'Block'
-        : i.type === 'weaken'
-          ? 'Weaken'
-          : 'Expose'
+      : i.type === 'sunder'
+        ? 'Sunder'
+        : i.type === 'block'
+          ? 'Block'
+          : i.type === 'weaken'
+            ? 'Weaken'
+            : 'Expose'
 }
 
 function firstAliveEnemy(s: GameState): number {
@@ -301,6 +328,18 @@ function runEnemyPhase(s: GameState): void {
       } else {
         logLine(s, `${e.name} attacks ${target.name} for ${amount}.`)
       }
+    } else if (it.type === 'sunder') {
+      // Wipe the guard first, so the strike lands on raw HP — turtling fails.
+      const stripped = target.block
+      target.block = 0
+      const amount = modified(it.value, e.weak, target.vulnerable)
+      const dealt = dealDamage(target, amount)
+      logLine(
+        s,
+        stripped > 0
+          ? `${e.name} sunders ${target.name}: -${stripped} block, ${dealt} damage.`
+          : `${e.name} sunders ${target.name} for ${dealt}.`,
+      )
     } else if (it.type === 'block') {
       e.block += it.value
       logLine(s, `${e.name} shields (+${it.value}).`)
