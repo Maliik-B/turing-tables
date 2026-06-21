@@ -34,6 +34,8 @@ const HORIZON = (() => {
   const strokes: Stroke[] = []
   const lights: Light[] = []
   const beacons: Pt[] = []
+  // solid buildings (towers + broken hulks) that can actually catch fire.
+  const buildings: Array<{ x: number; w: number; topY: number }> = []
 
   const windows = (x: number, w: number, topY: number) => {
     const cols = Math.max(1, Math.floor(w / 10))
@@ -54,6 +56,7 @@ const HORIZON = (() => {
   const build: Record<string, (x: number, w: number) => void> = {
     tower(x, w) {
       const topY = 106 + rnd() * 84
+      buildings.push({ x, w, topY })
       fills.push({ d: `M ${x} ${BASE} L ${x} ${topY} L ${x + w} ${topY} L ${x + w} ${BASE} Z` })
       for (let ry = topY + 8; ry < BASE; ry += 14)
         strokes.push({ d: `M ${x} ${ry} L ${x + w} ${ry}`, o: 0.08 })
@@ -117,6 +120,7 @@ const HORIZON = (() => {
     },
     broken(x, w) {
       const t = 224 + rnd() * 30
+      buildings.push({ x, w, topY: t })
       fills.push({ d: `M ${x} ${BASE} L ${x} ${t + 6} L ${x + w * 0.25} ${t + 12} L ${x + w * 0.45} ${t - 4} L ${x + w * 0.6} ${t + 16} L ${x + w * 0.8} ${t + 2} L ${x + w} ${t + 10} L ${x + w} ${BASE} Z` })
     },
   }
@@ -162,39 +166,45 @@ const HORIZON = (() => {
   // a damage threshold and only lights once cityDamage passes it. A site is a
   // cluster of "wicks" (oval flames) that ignite + die in a staggered, looping
   // sequence so the fire reads as starting, spreading, and lingering.
+  // Fires are anchored to actual solid buildings and CONTAINED within them: the
+  // blaze ignites low, climbs the structure floor by floor (higher rows catch
+  // later) and only licks just above the roof - never out into empty sky. Each
+  // building's size sets the fire's width, height, and intensity.
   type Wick = { dx: number; dy: number; r: number; phase: number; hw: number }
   const sites: Array<{ x: number; y: number; s: number; threshold: number; dur: number; wicks: Wick[] }> = []
-  for (let i = 0; i < 7; i++) {
-    const s = 0.85 + rnd() * 0.7
-    const spreadR = (26 + rnd() * 20) * s // how far the blaze engulfs outward
-    // a persistent ignition core that stays lit (the heart of the fire)
-    const wicks: Wick[] = [{ dx: 0, dy: 2 * s, r: (8 + rnd() * 4) * s, phase: 0.5, hw: 0.46 }]
-    // ...which spreads outward through rings, each igniting a little later, so
-    // the fire reads as catching and engulfing the building (RimWorld-style).
-    const rings = 2
-    for (let ring = 1; ring <= rings; ring++) {
-      const rr = (ring / rings) * spreadR
-      const count = ring + 2
-      for (let c = 0; c < count; c++) {
-        const ang = (c / count) * Math.PI * 2 + rnd() * 0.8
-        wicks.push({
-          dx: Math.cos(ang) * rr,
-          dy: Math.sin(ang) * rr * 0.5 - rr * 0.25, // biased upward (fire rises)
-          r: (5 + rnd() * 4) * s * (1 - ring * 0.14),
-          phase: 0.2 + ring * 0.24 + (rnd() - 0.5) * 0.12, // outer rings catch later
-          hw: 0.12 + rnd() * 0.06,
-        })
-      }
+  const burning = buildings
+    .map((b) => ({ b, k: rnd() }))
+    .sort((a, z) => a.k - z.k)
+    .slice(0, 8)
+  burning.forEach(({ b }, i) => {
+    const s = Math.min(1.3, Math.max(0.6, b.w / 42))
+    const halfW = Math.max(4, b.w / 2 - 3) // never wider than the building
+    const visH = Math.min(BASE - b.topY - 6, 50) // the visible burn height in it
+    // core glow in the body of the fire...
+    const wicks: Wick[] = [{ dx: 0, dy: visH * 0.45, r: Math.max(6, halfW * 0.6), phase: 0.5, hw: 0.48 }]
+    // ...and flames scattered ANYWHERE within the building's silhouette, each on
+    // its own random phase (organic flicker, no synchronized rows). Constrained
+    // to the building: never out beside it or up into open sky (only a slight
+    // lick above the roofline).
+    const n = 6 + Math.floor(rnd() * 4)
+    for (let j = 0; j < n; j++) {
+      wicks.push({
+        dx: Math.max(-halfW, Math.min(halfW, (rnd() - 0.5) * 2 * halfW)),
+        dy: -7 + rnd() * (visH + 7),
+        r: Math.max(2.5, (3.5 + rnd() * 4.5) * s),
+        phase: 0.06 + rnd() * 0.88,
+        hw: 0.1 + rnd() * 0.08,
+      })
     }
     sites.push({
-      x: 70 + (i / 7) * 1080 + (rnd() - 0.5) * 80,
-      y: 208 + rnd() * 56,
+      x: b.x + b.w / 2,
+      y: b.topY,
       s,
-      threshold: 0.12 + (i / 7) * 0.78 + (rnd() - 0.5) * 0.16,
-      dur: 4.5 + rnd() * 2.6,
+      threshold: 0.1 + (i / 8) * 0.82 + (rnd() - 0.5) * 0.12,
+      dur: 3.5 + rnd() * 2.5,
       wicks,
     })
-  }
+  })
 
   return { fills, strokes, lights, beacons, far, grid, sites }
 })()
@@ -314,7 +324,7 @@ export function Backdrop({
           .filter((s) => s.threshold <= cityDamage)
           .map((s, i) => (
             <g key={`site${i}`}>
-              <ellipse cx={s.x} cy={s.y} rx={20 * s.s} ry={15 * s.s} fill="url(#tt-cityfire)" opacity="0.26" />
+              <ellipse cx={s.x} cy={s.y + 16 * s.s} rx={15 * s.s} ry={20 * s.s} fill="url(#tt-cityfire)" opacity="0.26" />
               {s.wicks.map((w, k) => {
                 const t0 = Math.max(0.02, w.phase - w.hw)
                 const t2 = Math.min(0.98, w.phase + w.hw)
