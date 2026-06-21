@@ -290,7 +290,12 @@ export function BattleScreen({
         })}
       </div>
 
-      <DossierPanel stats={runStats} active={!!cur?.remembers} />
+      <DossierPanel
+        stats={runStats}
+        active={!!cur?.remembers}
+        trial={Math.min(encounter + 1, total)}
+        total={total}
+      />
 
       <div className="h-24 space-y-0.5 overflow-y-auto rounded-lg border border-neutral-800/60 bg-neutral-900/40 px-4 py-2 text-xs">
         {awaitingIntents && (
