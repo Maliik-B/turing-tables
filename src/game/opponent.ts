@@ -114,7 +114,7 @@ export function decideEnemyMove(ctx: BrainContext): EnemyMove {
 }
 
 function decideCore(ctx: BrainContext): EnemyMove {
-  const enraged = ctx.hpRatio <= 0.35
+  const enraged = ctx.hpRatio <= 0.25
   const has = (a: IntentType) => ctx.abilities.includes(a)
   const attack = (): EnemyMove => {
     const base = 8 + Math.floor(Math.random() * 5) // 8-12

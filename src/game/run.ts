@@ -71,7 +71,7 @@ export const RUN: EncounterDef[] = [
     intel: [
       'Strikes for 8–14 · Shields for ~8',
       'Combo: exposes you, then drains the opening — big hit, heals itself',
-      'Resists corruption — your DoT takes hold at half strength',
+      'Resists corruption — your DoT takes hold at reduced strength',
       'Runs Gemini 3 Flash, knows your whole deck, and has studied your prior trials.',
     ],
     cardCount: 'full',
@@ -80,7 +80,7 @@ export const RUN: EncounterDef[] = [
 ]
 
 // Fraction of max HP recovered between trials.
-export const HEAL_FRACTION = 0.4
+export const HEAL_FRACTION = 0.3
 
 // Friendly display name for a model id, shown on the "Machine:" chip so a judge
 // who never reaches Trial 4 still sees the escalating Flash-Lite -> Flash ->

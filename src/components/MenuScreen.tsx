@@ -170,9 +170,10 @@ export function MenuScreen({
               no backend.
             </p>
             <p className="mt-1.5 text-[11px] leading-snug text-neutral-600">
-              A free key is good for roughly 15 to 25 runs before its daily
-              limit resets (midnight Pacific). If you pop it often, upgrading
-              your Google AI plan lifts the cap.
+              A free key easily covers a full session. The daily free-tier
+              limit resets midnight Pacific and is high enough that you are
+              unlikely to reach it in normal play. If a machine ever runs dry,
+              it drops to its scripted imitation and the run plays on.
             </p>
           </div>
         )}

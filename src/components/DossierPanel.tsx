@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { RunStats } from '../game/types'
 
@@ -85,6 +85,11 @@ export function DossierPanel({
 }) {
   // null = follow `active` (auto-open at the Mainframe); a boolean = user choice.
   const [manualOpen, setManualOpen] = useState<boolean | null>(null)
+  // Reaching the Mainframe (active flips true) re-asserts auto-open, so an early
+  // manual collapse during the trials doesn't keep the boss's file hidden.
+  useEffect(() => {
+    setManualOpen(null)
+  }, [active])
   const open = manualOpen === null ? active : manualOpen
   const obs = observations(stats)
   const dataPoints = stats.attacks + stats.skills + stats.severs + stats.accuses
@@ -122,7 +127,8 @@ export function DossierPanel({
       <button
         type="button"
         onClick={() => setManualOpen(!open)}
-        className="relative flex w-full items-center justify-between gap-2 px-3 py-2"
+        title="Tap to read the machine's file on you"
+        className="relative flex w-full items-center justify-between gap-2 px-3 py-2 transition-colors hover:bg-white/[0.03]"
       >
         <span
           className={`flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] ${
@@ -145,7 +151,7 @@ export function DossierPanel({
             {active ? 'OBSERVING' : 'LOGGING'}
             {trial && total ? ` · ${trial}/${total}` : ''}
           </span>
-          <span className="font-mono text-[10px] text-neutral-600">{open ? '▾' : '▸'}</span>
+          <span className={`font-mono text-base leading-none ${active ? 'text-red-300' : 'text-amber-400/80'}`}>{open ? '▾' : '▸'}</span>
         </span>
       </button>
 

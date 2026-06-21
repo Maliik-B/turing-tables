@@ -16,7 +16,7 @@ type Screen = 'menu' | 'intro' | 'game'
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () =>
-    createInitialState(),
+    createInitialState(!!localStorage.getItem(KEY_STORAGE)),
   )
   const [apiKey, setApiKey] = useState<string>(
     () => localStorage.getItem(KEY_STORAGE) ?? '',
@@ -92,6 +92,12 @@ function App() {
       recordedRef.current = false
     }
   }, [state.phase])
+
+  // Keep the engine's key-awareness in sync so the key-only Sever card is gated
+  // out of the deck when keyless (reconciled at the next trial's deck rebuild).
+  useEffect(() => {
+    dispatch({ type: 'SET_KEY', hasKey: !!apiKey })
+  }, [apiKey])
 
   // One-decision-per-round guard for the intent decider (see the effect below).
   const decidedIntentKey = useRef<string | null>(null)

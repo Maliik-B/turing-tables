@@ -118,6 +118,17 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
   }
 }
 
+// Sever is a key-only card: useless against a scripted (keyless or rate-limited)
+// machine. Keep the collection in sync with the key state at deck-rebuild time so
+// a keyless run never draws a dead card, and a key added later restores it on the
+// next trial. Reconciling at this reshuffle boundary keeps tempo clean.
+function reconcileSever(p: Combatant, hasKey: boolean, pastEliza: boolean): void {
+  const hasSever = p.collection.some((c) => c.key === 'sever')
+  if (hasKey && pastEliza && !hasSever) p.collection.push(instantiate('sever'))
+  else if (!hasKey && hasSever)
+    p.collection = p.collection.filter((c) => c.key !== 'sever')
+}
+
 // Configure the given trial: spin up its enemy and reset each living player's
 // combat state, rebuilding their deck from their persistent collection (so
 // exhausted cards like Sever return each fight).
@@ -142,6 +153,7 @@ function setupEncounter(s: GameState, index: number): void {
     p.attacksThisTurn = 0
     p.energy = p.maxEnergy
     p.ended = false
+    reconcileSever(p, s.hasKey, index >= 1)
     p.deck = shuffle([...p.collection])
     p.hand = []
     p.discard = []
@@ -149,7 +161,7 @@ function setupEncounter(s: GameState, index: number): void {
   }
 }
 
-export function createInitialState(): GameState {
+export function createInitialState(hasKey = false): GameState {
   uidCounter = 1
   const state: GameState = {
     players: [makePlayer(0)],
@@ -175,6 +187,7 @@ export function createInitialState(): GameState {
     seen: [],
     rewardChoices: [],
     runId: runCounter++,
+    hasKey,
   }
   setupEncounter(state, 0)
   return state
@@ -202,6 +215,7 @@ function clone(s: GameState): GameState {
     seen: s.seen ? [...s.seen] : [],
     rewardChoices: [...s.rewardChoices],
     runId: s.runId,
+    hasKey: s.hasKey,
   }
 }
 
@@ -398,7 +412,7 @@ export function reducer(state: GameState, action: Action): GameState {
       if (card.corruption && enemy) {
         // The Mainframe has studied you: corruption takes hold at half strength.
         const applied = enemy.remembers
-          ? Math.ceil(card.corruption / 2)
+          ? Math.ceil((card.corruption * 2) / 3)
           : card.corruption
         enemy.corruption += applied
         fx.push(
@@ -533,10 +547,12 @@ export function reducer(state: GameState, action: Action): GameState {
         p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * HEAL_FRACTION))
       }
       // Clearing ELIZA (gen-0) is where Sever starts to matter — the real Gemini
-      // machines begin next — so the card joins the deck now (intro'd in-fight).
-      if (s.encounter === 0) {
+      // machines begin next. It only joins the deck with a key live (useless
+      // against a scripted machine); a key added later restores it via
+      // reconcileSever at the next trial setup.
+      if (s.encounter === 0 && s.hasKey) {
         const me = s.players[s.activeSeat]
-        if (me) {
+        if (me && !me.collection.some((c) => c.key === 'sever')) {
           me.collection.push(instantiate('sever'))
           logLine(s, "You learn to Sever the machine's link.")
         }
@@ -547,7 +563,12 @@ export function reducer(state: GameState, action: Action): GameState {
       return s
     }
     case 'RESTART':
-      return createInitialState()
+      return createInitialState(action.hasKey ?? false)
+    case 'SET_KEY': {
+      const s = clone(state)
+      s.hasKey = action.hasKey
+      return s
+    }
     default:
       return state
   }
