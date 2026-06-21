@@ -141,7 +141,11 @@ export async function geminiDecideMove(
       data?.candidates?.[0]?.content?.parts?.[0]?.text
     if (!text) return { move: null, status: 'error' }
 
-    const parsed = JSON.parse(text) as { action?: string; value?: number }
+    const parsed = JSON.parse(text) as {
+      action?: string
+      value?: number
+      taunt?: string
+    }
     const act: IntentType = (actions as string[]).includes(parsed.action ?? '')
       ? (parsed.action as IntentType)
       : 'attack'
@@ -158,8 +162,12 @@ export async function geminiDecideMove(
       value = ABILITY_INFO[act]?.value ?? 2
     }
 
+    const taunt =
+      typeof parsed.taunt === 'string' && parsed.taunt.trim()
+        ? parsed.taunt.trim()
+        : undefined
     return {
-      move: { intent: { type: act, value }, source: 'gemini' },
+      move: { intent: { type: act, value }, source: 'gemini', taunt },
       status: 'ok',
     }
   } catch {

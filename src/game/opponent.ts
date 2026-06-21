@@ -3,6 +3,9 @@ import type { Intent, IntentType, MoveSource } from './types'
 export interface EnemyMove {
   intent: Intent
   source: MoveSource
+  // The machine's spoken line for this move (canned for the scripted brain,
+  // Gemini-written otherwise): flavor, and a subtle imitation-game tell.
+  taunt?: string
 }
 
 export interface BrainContext {
@@ -56,7 +59,38 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
 // power-up, or your HP. That obliviousness is the real tell to hunt.
 //   - never shields twice in a row; never shields while enraged (low HP)
 //   - hits harder when enraged
+// Canned lines for the scripted brain — deliberately a little flat and
+// repetitive (the "imitation" tell): a player who watches long enough learns to
+// spot the loop, while Gemini's lines stay context-aware and fresh.
+const SCRIPTED_TAUNTS: Record<string, string[]> = {
+  attack: [
+    'Executing attack routine.',
+    'Resistance is illogical.',
+    'You were predictable.',
+    'Outcome already computed.',
+    'Damage subroutine engaged.',
+  ],
+  block: [
+    'Hardening defenses.',
+    'Recalibrating. Stand by.',
+    'Defense protocol active.',
+  ],
+  weaken: ['Degrading your output.', 'Reducing your effectiveness.'],
+  expose: ['Vulnerability identified.', 'Exposing weak points.'],
+  drain: ['Extracting resources.', 'Your loss is my gain.'],
+}
+function scriptedTaunt(type: IntentType): string {
+  const pool = SCRIPTED_TAUNTS[type] ?? SCRIPTED_TAUNTS.attack
+  return pool[Math.floor(Math.random() * pool.length)] ?? ''
+}
+
+// Public entry: pick a coherent move, then attach a canned line as its "voice".
 export function decideEnemyMove(ctx: BrainContext): EnemyMove {
+  const move = decideCore(ctx)
+  return { ...move, taunt: scriptedTaunt(move.intent.type) }
+}
+
+function decideCore(ctx: BrainContext): EnemyMove {
   const enraged = ctx.hpRatio <= 0.35
   const has = (a: IntentType) => ctx.abilities.includes(a)
   const attack = (): EnemyMove => {

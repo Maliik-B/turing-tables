@@ -36,6 +36,22 @@ function readConfidence(
       : 'near-certain'
 }
 
+// Light color-categorization for the combat log so the player can parse it at a
+// glance: the machine's taunts, its actions, your plays, damage-over-time, and
+// the imitation-game reads each get their own tint.
+function logClass(line: string): string {
+  if (line.includes(': "')) return 'italic text-amber-300/85' // machine taunt
+  if (/Imitation exposed|that was the Machine|loops back/.test(line))
+    return 'text-fuchsia-300/90' // a read resolved
+  if (line.startsWith('You ')) return 'text-emerald-300/80' // your plays
+  if (line.includes('Corruption')) return 'text-lime-300/80' // damage-over-time
+  if (/attacks|drains|exposes|weakens|shields/.test(line))
+    return 'text-red-300/85' // enemy action
+  if (/Trial|halts|Dawn|long dark|awakens|Sever|learn to/.test(line))
+    return 'text-amber-200/55' // narration
+  return 'text-neutral-500'
+}
+
 export function BattleScreen({
   state,
   dispatch,
@@ -285,11 +301,9 @@ export function BattleScreen({
         {log.map((line, i) => (
           <p
             key={i}
-            className={
-              i === 0 && !awaitingIntents
-                ? 'text-neutral-200'
-                : 'text-neutral-500'
-            }
+            className={`${logClass(line)}${
+              i === 0 && !awaitingIntents ? ' font-medium' : ''
+            }`}
           >
             {line}
           </p>
