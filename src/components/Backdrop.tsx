@@ -269,7 +269,7 @@ export function Backdrop({
         <defs>
           <linearGradient id="tt-fog-grad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#07070c" stopOpacity="0" />
-            <stop offset="100%" stopColor="#07070c" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#07070c" stopOpacity="0.82" />
           </linearGradient>
         </defs>
       </svg>
@@ -308,6 +308,20 @@ export function Backdrop({
         </filter>
         <rect width="100%" height="100%" filter="url(#tt-grain)" />
       </svg>
+
+      {/* Foreground grounding haze: a near, dawn-lit surface the cards sit on,
+          so the distant city (and the machine's lower legs) recede behind your
+          hand instead of being hard-cut by the opaque card row. */}
+      <div
+        className="absolute inset-x-0 bottom-0 transition-all duration-1000"
+        style={{
+          height: '34vh',
+          zIndex: -3,
+          background: lost
+            ? 'linear-gradient(to top, rgba(8,9,16,0.55), transparent 58%)'
+            : `linear-gradient(to top, rgba(${Math.round(24 + warmth * 26)},${Math.round(15 + warmth * 14)},9,${0.42 + warmth * 0.18}), rgba(18,11,9,0.12) 52%, transparent)`,
+        }}
+      />
     </div>
   )
 }
