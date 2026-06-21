@@ -102,7 +102,7 @@ export function BattleScreen({
     }
   }, [encounter])
   const severIntro =
-    !!me && !over && !cleared && encounter === 1 && !severIntroSeen
+    !!apiKey && !!me && !over && !cleared && encounter === 1 && !severIntroSeen
   const [showDeck, setShowDeck] = useState(false)
   // Keyless reminder that the real Gemini machine is being faked; dismissible.
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
@@ -120,7 +120,7 @@ export function BattleScreen({
       // Shift+R quick-restarts from any phase (playtest convenience). Shift so a
       // stray keypress can't wipe a run.
       if (e.shiftKey && k === 'r') {
-        dispatch({ type: 'RESTART' })
+        dispatch({ type: 'RESTART', hasKey: !!apiKey })
         return
       }
 
@@ -144,7 +144,7 @@ export function BattleScreen({
         return
       }
       if (over) {
-        if (k === 'r' || e.key === 'Enter') dispatch({ type: 'RESTART' })
+        if (k === 'r' || e.key === 'Enter') dispatch({ type: 'RESTART', hasKey: !!apiKey })
         return
       }
       if (phase !== 'player' || awaitingIntents || !me || me.ended) return
@@ -165,6 +165,7 @@ export function BattleScreen({
       } else if (
         k === 'c' &&
         curIsGemini &&
+        apiStatus !== 'rate_limit' &&
         !calledThisRound &&
         !targetSevered &&
         aliveEnemy >= 0
@@ -184,6 +185,8 @@ export function BattleScreen({
     showDeck,
     rewardChoices,
     curIsGemini,
+    apiStatus,
+    apiKey,
     calledThisRound,
     targetSevered,
     aliveEnemy,
@@ -203,7 +206,7 @@ export function BattleScreen({
           </span>
           <button
             type="button"
-            onClick={() => dispatch({ type: 'RESTART' })}
+            onClick={() => dispatch({ type: 'RESTART', hasKey: !!apiKey })}
             title="Restart the run (Shift+R)"
             className="rounded border border-neutral-700 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-neutral-400 hover:border-amber-500/50 hover:text-amber-300"
           >
@@ -370,12 +373,17 @@ export function BattleScreen({
                 {curIsGemini && (
                   <button
                     type="button"
-                    title="Accuse the Machine's telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: -4 HP."
+                    title={
+                      apiStatus === 'rate_limit'
+                        ? 'This machine hit its free quota and is running the scripted imitation — there is no real mind to catch right now.'
+                        : "Accuse the Machine's telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: -4 HP."
+                    }
                     disabled={
                       phase !== 'player' ||
                       awaitingIntents ||
                       calledThisRound ||
                       targetSevered ||
+                      apiStatus === 'rate_limit' ||
                       aliveEnemy < 0
                     }
                     onClick={() =>
@@ -587,7 +595,7 @@ export function BattleScreen({
             </p>
             <button
               type="button"
-              onClick={() => dispatch({ type: 'RESTART' })}
+              onClick={() => dispatch({ type: 'RESTART', hasKey: !!apiKey })}
               className="mt-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-6 py-2 font-semibold text-amber-300 hover:bg-amber-500/20"
             >
               New Trial

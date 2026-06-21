@@ -166,6 +166,9 @@ export interface GameState {
   // Unique id per run (increments on RESTART). Lets the intent decider dedupe
   // one decision per round even under React StrictMode's double effect-invoke.
   runId: number
+  // Whether a Gemini API key is currently set. Gates the key-only Sever card out
+  // of the deck when keyless, reconciled at each trial's deck rebuild.
+  hasKey: boolean
 }
 
 export type Action =
@@ -177,4 +180,5 @@ export type Action =
     }
   | { type: 'ACCUSE'; enemy: number }
   | { type: 'CHOOSE_REWARD'; uid: number | null }
-  | { type: 'RESTART' }
+  | { type: 'RESTART'; hasKey?: boolean }
+  | { type: 'SET_KEY'; hasKey: boolean }

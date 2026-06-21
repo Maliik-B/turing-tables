@@ -67,8 +67,8 @@ export const CARDS: Record<string, CardDef> = {
     name: 'Corrupt',
     cost: 1,
     type: 'attack',
-    text: 'Apply 4 Corruption. It bites each round, fading by 1.',
-    corruption: 4,
+    text: 'Apply 6 Corruption. It bites each round, fading by 1.',
+    corruption: 6,
   },
   leech: {
     key: 'leech',

@@ -18,7 +18,7 @@ export function EnemyPanel({
   confidence: string | null
 }) {
   const dead = enemy.hp <= 0
-  const enraged = !dead && enemy.hp / enemy.maxHp <= 0.35
+  const enraged = !dead && enemy.hp / enemy.maxHp <= 0.25
   const severedLeft = Math.max(0, enemy.severedUntilRound - round + 1)
   const it = enemy.intent
   const shownAttack = enemy.weak > 0 ? Math.floor(it.value * 0.75) : it.value
@@ -57,7 +57,7 @@ export function EnemyPanel({
           )}
           {enraged && (
             <span
-              title="Enraged: this machine hits harder while wounded (below 35% HP)."
+              title="Enraged: this machine hits harder while wounded (below 25% HP)."
               className="rounded bg-orange-600/30 px-1.5 py-0.5 text-[10px] font-semibold text-orange-300"
             >
               ENRAGED
