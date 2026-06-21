@@ -42,14 +42,14 @@ export function BattleScreen({
   apiKey,
   onApiKey,
   record,
-  apiStatus,
+  apiStatusByModel,
 }: {
   state: GameState
   dispatch: Dispatch<Action>
   apiKey: string
   onApiKey: (key: string) => void
   record: { wins: number; losses: number }
-  apiStatus: GeminiStatus | null
+  apiStatusByModel: Record<string, GeminiStatus>
 }) {
   const {
     enemies,
@@ -72,6 +72,8 @@ export function BattleScreen({
   const aliveEnemy = enemies.findIndex((e) => e.hp > 0)
   const cur = aliveEnemy >= 0 ? enemies[aliveEnemy] : undefined
   const curIsGemini = !!apiKey && !!cur?.model
+  // This machine's own Gemini health (per-model), for the rate-limit banner.
+  const apiStatus = cur?.model ? (apiStatusByModel[cur.model] ?? null) : null
   const targetSevered = !!cur && cur.severedUntilRound >= round
 
   const [severIntroSeen, setSeverIntroSeen] = useState(false)

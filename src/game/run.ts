@@ -80,7 +80,7 @@ export const RUN: EncounterDef[] = [
 ]
 
 // Fraction of max HP recovered between trials.
-export const HEAL_FRACTION = 0.3
+export const HEAL_FRACTION = 0.4
 
 // Friendly display name for a model id, shown on the "Machine:" chip so a judge
 // who never reaches Trial 4 still sees the escalating Flash-Lite -> Flash ->
