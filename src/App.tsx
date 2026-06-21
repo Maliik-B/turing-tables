@@ -194,6 +194,7 @@ function App() {
                 memory: e.remembers
                   ? buildDossier(state.runStats)
                   : undefined,
+                bluffChance: e.bluffChance,
               },
             )
           }),

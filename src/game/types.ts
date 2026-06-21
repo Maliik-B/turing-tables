@@ -103,6 +103,10 @@ export interface Enemy {
   corruption: number
   intent: Intent
   intentSource: MoveSource
+  // A thinking machine's bluff: the FALSE move shown to the player while `intent`
+  // (the truth) is what actually executes. null = honest telegraph. Scripted
+  // machines never set this, so a trustworthy telegraph means no mind behind it.
+  decoyIntent: Intent | null
   targetSeat: number
   lastMove: IntentType | null
   // Set to the move's true source once the player accuses it (else null).
@@ -117,6 +121,8 @@ export interface Enemy {
   remembers: boolean
   // Signature moves beyond attack/block this generation can deploy.
   abilities: IntentType[]
+  // Chance a real (Gemini) move telegraphs a feint this turn (0 = honest tier).
+  bluffChance: number
   // How much of the player's deck the Gemini brain knows (scales up the ladder).
   cardCount: 'none' | 'observed' | 'full'
   // Player-facing Gemini passive label (shown only when a key is active).
@@ -176,7 +182,13 @@ export type Action =
   | { type: 'END_TURN'; seat: number }
   | {
       type: 'SET_INTENTS'
-      intents: { intent: Intent; source: MoveSource; taunt?: string }[]
+      intents: {
+        intent: Intent
+        source: MoveSource
+        taunt?: string
+        // A feint: the false telegraph shown while `intent` actually resolves.
+        decoy?: Intent
+      }[]
     }
   | { type: 'ACCUSE'; enemy: number }
   | { type: 'CHOOSE_REWARD'; uid: number | null }

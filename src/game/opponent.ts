@@ -46,9 +46,26 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
     gemini: '"expose": apply Vulnerable for 3 turns so the human takes 50% more damage — then strike into it.',
   },
   drain: {
-    value: 9,
-    gemini: '"drain": deal 9 damage to the human and heal yourself for half of what lands (block denies the heal).',
+    value: 10,
+    gemini: '"drain": deal 10 damage to the human and heal yourself for half of what lands (block denies the heal).',
   },
+}
+
+// Build a feint: a FALSE intent to telegraph while the real move resolves. A
+// dangerous real move (attack/drain) shows something harmless so the human
+// doesn't brace; a defensive/setup real move shows an attack so they waste a
+// guard. Only thinking (Gemini) machines feint — see decideMove.
+const HARMLESS: IntentType[] = ['block', 'weaken', 'expose']
+export function makeDecoy(real: Intent, ctx: BrainContext): Intent {
+  if (real.type === 'attack' || real.type === 'drain') {
+    const pool = HARMLESS.filter(
+      (t) => t === 'block' || ctx.abilities.includes(t),
+    )
+    const t = pool[Math.floor(Math.random() * pool.length)] ?? 'block'
+    return { type: t, value: t === 'block' ? 8 : (ABILITY_INFO[t]?.value ?? 2) }
+  }
+  // Real move is block/weaken/expose: telegraph a believable incoming hit.
+  return { type: 'attack', value: 9 + Math.floor(Math.random() * 6) }
 }
 
 // The scripted ("imitation") opponent brain — the free, offline fallback and
@@ -117,7 +134,7 @@ function decideCore(ctx: BrainContext): EnemyMove {
   const enraged = ctx.hpRatio <= 0.25
   const has = (a: IntentType) => ctx.abilities.includes(a)
   const attack = (): EnemyMove => {
-    const base = 8 + Math.floor(Math.random() * 5) // 8-12
+    const base = 9 + Math.floor(Math.random() * 6) // 9-14 (~+15% over the old band)
     return {
       intent: { type: 'attack', value: enraged ? base + 4 : base },
       source: 'scripted',
