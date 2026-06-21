@@ -1,12 +1,12 @@
 // An Omnidroid-style war machine ravaging the city on the horizon, escalating
 // with the enemy tier AND with how aware of YOU it is:
 //   ELIZA    - an inert husk, eye nearly dark, doing nothing.
-//   DAEMON   - mid-rampage, an arm crushing a tower, optic just swung to you.
-//   ORACLE   - still tearing up the city, half-turned your way.
-//   MAINFRAME- done with the city, facing you, hurling debris at the screen.
-// Spherical chassis on grounded clawed legs + jointed clawed arms, with crushed
-// towers, debris, drifting smoke. A nod to The Incredibles' learning battle-bots.
-// Pure SVG behind the UI. `distant` = a faint far tease (menu).
+//   DAEMON   - mid-rampage, both claws crushing skyscrapers, optic swung to you.
+//   ORACLE   - still tearing the city down, more fire, half-fixed on you.
+//   MAINFRAME- done with the city, facing you, reaching + hurling debris.
+// Fire (the one thing that reads against the dark palette) + tall smoke sell the
+// ravaging; fighter jets harry it with tracer fire (human resistance, and a
+// directive for the machine). Pure SVG behind the UI. `distant` = a faint tease.
 export function MachineColossus({
   tier,
   distant = false,
@@ -16,11 +16,11 @@ export function MachineColossus({
 }) {
   const t = Math.max(0, Math.min(3, Math.floor(tier)))
   const cfg = [
-    { R: 36, legs: 4, optics: 1, dim: true, smoke: 0 },
-    { R: 48, legs: 5, optics: 1, smoke: 1 },
-    { R: 60, legs: 6, optics: 3, smoke: 2 },
-    { R: 76, legs: 8, optics: 5, smoke: 2, throws: true },
-  ][t]
+    { R: 36, legs: 4, optics: 1, dim: true, mode: 'idle' },
+    { R: 48, legs: 5, optics: 1, mode: 'destroy' },
+    { R: 60, legs: 6, optics: 3, mode: 'destroy' },
+    { R: 76, legs: 8, optics: 5, mode: 'throw', throws: true },
+  ][t] as { R: number; legs: number; optics: number; dim?: boolean; mode: string; throws?: boolean }
   const R = cfg.R
   const live = !cfg.dim
   const CX = 400
@@ -29,9 +29,14 @@ export function MachineColossus({
   const stance = R * 1.7 + t * 20
   const rad = (d: number) => (d * Math.PI) / 180
 
-  // --- grounded legs: feet planted on the city line, knees raised ---
   const legSpines: string[] = []
+  const armSpines: string[] = []
   const clawPaths: string[] = []
+  const skyscrapers: Array<{ x: number; w: number; topY: number }> = []
+  const fires: Array<{ x: number; y: number; r: number }> = []
+  const smokes: Array<{ x: number; y: number; r: number; d: number }> = []
+
+  // grounded legs: feet planted on the city line, knees raised
   const half = Math.ceil(cfg.legs / 2)
   for (let i = 0; i < cfg.legs; i++) {
     const side = i < half ? -1 : 1
@@ -48,61 +53,47 @@ export function MachineColossus({
     for (const c of [-6, 0, 6]) clawPaths.push(`M ${fx.toFixed(1)} ${fy.toFixed(1)} L ${(fx + c).toFixed(1)} ${(fy + 10).toFixed(1)}`)
   }
 
-  // --- jointed clawed arms, posed by tier (crush low / reach high) ---
-  // each entry: a hand point, and whether it grips a tower (crush) at the ground
-  const armPlans =
-    t === 1
-      ? [{ hand: [CX + R * 2.3, CY + R * 1.1], crush: true }]
-      : t === 2
-        ? [
-            { hand: [CX - R * 2.2, CY + R * 1.0], crush: true },
-            { hand: [CX + R * 2.3, CY - R * 1.4], crush: false },
-          ]
-        : t === 3
-          ? [
-              { hand: [CX - R * 1.9, CY - R * 1.9], crush: false },
-              { hand: [CX + R * 2.0, CY - R * 1.6], crush: false },
-            ]
-          : []
-  const armSpines: string[] = []
-  const towers: Array<{ x: number; w: number; topY: number }> = []
-  for (const p of armPlans) {
-    const [hxp, hyp] = p.hand
+  // a jointed clawed arm from a shoulder on the orb to a hand point
+  function arm(hxp: number, hyp: number, gripDown: boolean) {
     const side = hxp < CX ? -1 : 1
-    // shoulder on the upper chassis toward the hand
-    const sA = Math.atan2(hyp - CY, hxp - CX) * 0.5 + rad(side * -90) * 0.5
+    const sA = Math.atan2(hyp - CY, hxp - CX) * 0.55 + rad(side * -90) * 0.45
     const sx = CX + R * Math.cos(sA)
-    const sy = CY + R * Math.sin(sA) - R * 0.2
-    // elbow: bent outward, above the hand for a reaching limb
-    const ex = sx + (hxp - sx) * 0.5 + side * R * 0.5
-    const ey = Math.min(sy, hyp) - R * 0.5
+    const sy = CY + R * Math.sin(sA) - R * 0.15
+    const ex = sx + (hxp - sx) * 0.5 + side * R * 0.45
+    const ey = Math.min(sy, hyp) - R * 0.45
     armSpines.push(`M ${sx.toFixed(1)} ${sy.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)} L ${hxp.toFixed(1)} ${hyp.toFixed(1)}`)
-    // grabbing claw: curved prongs at the hand
-    const grip = p.crush ? 90 : Math.atan2(hyp - ey, hxp - ex) * (180 / Math.PI) + 90
-    for (const c of [-26, 0, 26]) {
-      const a = rad(grip + c)
-      clawPaths.push(`M ${hxp.toFixed(1)} ${hyp.toFixed(1)} Q ${(hxp + 7 * Math.cos(a - 0.5)).toFixed(1)} ${(hyp + 7 * Math.sin(a - 0.5)).toFixed(1)} ${(hxp + 13 * Math.cos(a)).toFixed(1)} ${(hyp + 13 * Math.sin(a)).toFixed(1)}`)
+    const base = gripDown ? 90 : Math.atan2(hyp - ey, hxp - ex) * (180 / Math.PI) + 90
+    for (const c of [-30, -10, 10, 30]) {
+      const a = rad(base + c)
+      clawPaths.push(`M ${hxp.toFixed(1)} ${hyp.toFixed(1)} Q ${(hxp + 6 * Math.cos(a - 0.5)).toFixed(1)} ${(hyp + 6 * Math.sin(a - 0.5)).toFixed(1)} ${(hxp + 14 * Math.cos(a)).toFixed(1)} ${(hyp + 14 * Math.sin(a)).toFixed(1)}`)
     }
-    if (p.crush) towers.push({ x: hxp - 16, w: 30, topY: hyp - 6 })
   }
 
-  // --- crushed / toppled towers + debris (the ravaged city right at its feet) ---
-  const debris: string[] = []
-  for (let i = 0; i < cfg.smoke * 4; i++) {
-    const dx = CX + (((i * 73) % 200) - 100) * (R / 50)
-    const dy = GROUND - ((i * 37) % 30)
-    const s = 3 + ((i * 13) % 5)
-    debris.push(`M ${dx} ${dy} l ${s} ${-s * 0.6} l ${s * 0.5} ${s} l ${-s} ${s * 0.4} z`)
+  if (cfg.mode === 'destroy') {
+    // both claws crushing two skyscrapers whose tops reach the visible band
+    for (const sx of [CX - R * 2.4, CX + R * 2.4]) {
+      const topY = CY + R * 0.55
+      const w = R * 0.5
+      skyscrapers.push({ x: sx - w / 2, w, topY })
+      arm(sx, topY, true)
+      fires.push({ x: sx, y: topY, r: R * 0.7 })
+      smokes.push({ x: sx, y: topY - R * 0.4, r: R * 1.1, d: 7 })
+      smokes.push({ x: sx + R * 0.2, y: topY - R * 1.6, r: R * 1.6, d: 10 })
+    }
+  } else if (cfg.mode === 'throw') {
+    // both hands reaching at you; fire + smoke from the wrecked city behind it
+    arm(CX - R * 1.9, CY + R * 1.7, false)
+    arm(CX + R * 2.0, CY + R * 0.4, false)
+    for (const sx of [CX - R * 2.7, CX + R * 2.9]) {
+      fires.push({ x: sx, y: GROUND - R * 0.5, r: R * 0.8 })
+      smokes.push({ x: sx, y: GROUND - R * 1.1, r: R * 1.5, d: 8 })
+      smokes.push({ x: sx, y: GROUND - R * 2.6, r: R * 1.9, d: 12 })
+    }
   }
 
-  // --- drifting smoke plumes ---
-  const smokes: Array<{ x: number; y: number; r: number; d: number }> = []
-  for (let i = 0; i < cfg.smoke * 2; i++) {
-    // plumes rise from the crushed city up past the orb into the visible gap
-    smokes.push({ x: CX + (i % 2 === 0 ? 1.5 : -1.4) * R, y: CY + R * 0.6 - i * 40, r: R * (1.2 + i * 0.45), d: 7 + (i % 3) * 2 })
-  }
+  // jets harrying the machine with tracer fire (human resistance, live tiers)
+  const jets = live ? Array.from({ length: 2 + t }, (_, i) => ({ y: 64 + i * 24, dir: i % 2 === 0 ? 1 : -1, dur: 7 + (i % 3) * 2 })) : []
 
-  // --- optic cluster (faces you) ---
   const optics: Array<{ x: number; y: number; r: number }> = [{ x: CX, y: CY + R * 0.14, r: R * 0.24 }]
   for (let i = 1; i < cfg.optics; i++) {
     const a = rad(35 + (i / (cfg.optics - 1)) * 110)
@@ -114,7 +105,7 @@ export function MachineColossus({
     <svg
       aria-hidden
       className="absolute inset-x-0 bottom-0"
-      style={{ height: distant ? '30vh' : '62vh', zIndex: -10, opacity: distant ? 0.42 : 0.92 }}
+      style={{ height: distant ? '30vh' : '64vh', zIndex: -10, opacity: distant ? 0.42 : 0.94 }}
       width="100%"
       viewBox="0 0 800 600"
       preserveAspectRatio="xMidYMax meet"
@@ -126,23 +117,59 @@ export function MachineColossus({
           <stop offset="100%" stopColor="#7f1d1d" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="tt-smoke">
-          <stop offset="0%" stopColor="#403a46" stopOpacity="0.62" />
+          <stop offset="0%" stopColor="#403a46" stopOpacity="0.6" />
           <stop offset="100%" stopColor="#3a3540" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="tt-fire" cx="50%" cy="62%">
+          <stop offset="0%" stopColor="#fde68a" stopOpacity="0.95" />
+          <stop offset="38%" stopColor="#f97316" stopOpacity="0.72" />
+          <stop offset="100%" stopColor="#7c2d12" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      {/* smoke behind the machine */}
-      {smokes.map((s, i) => (
-        <ellipse key={i} cx={s.x} cy={s.y} rx={s.r} ry={s.r * 0.8} fill="url(#tt-smoke)">
-          <animate attributeName="cy" values={`${s.y};${s.y - 18};${s.y}`} dur={`${s.d}s`} repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.9;0.6;0.9" dur={`${s.d}s`} repeatCount="indefinite" />
+      {/* fighter jets + tracer fire (behind the machine) */}
+      {jets.map((j, i) => (
+        <g key={i}>
+          <g transform={j.dir > 0 ? '' : 'translate(800 0) scale(-1 1)'}>
+            <g>
+              <path d="M -11 0 L 7 -2.5 L 2 0 L 7 2.5 Z" fill="#0a0a12" stroke="rgba(150,172,205,0.4)" strokeWidth="0.6" />
+              <line x1="-11" y1="0" x2="-30" y2="0" stroke="rgba(150,172,205,0.16)" strokeWidth="1.2" />
+              <animateMotion path={`M -70 ${j.y} L 870 ${j.y}`} dur={`${j.dur}s`} repeatCount="indefinite" />
+            </g>
+          </g>
+        </g>
+      ))}
+      {live &&
+        [0, 1, 2].map((i) => {
+          const tx = CX + (i - 1) * 150
+          const ty = 78 + i * 12
+          return (
+            <line key={`tr${i}`} x1={tx} y1={ty} x2={CX + (i - 1) * 26} y2={CY - R} stroke="#fca5a5" strokeWidth="1" strokeOpacity="0">
+              <animate attributeName="stroke-opacity" values="0;0.55;0;0" dur={`${0.5 + i * 0.25}s`} repeatCount="indefinite" />
+            </line>
+          )
+        })}
+
+      {/* fire glows (the ravaging, legible against the dark) */}
+      {fires.map((f, i) => (
+        <ellipse key={i} cx={f.x} cy={f.y} rx={f.r} ry={f.r * 1.4} fill="url(#tt-fire)">
+          <animate attributeName="opacity" values="0.7;1;0.6;0.9;0.7" dur={`${1.1 + i * 0.3}s`} repeatCount="indefinite" />
+          <animate attributeName="ry" values={`${f.r * 1.3};${f.r * 1.7};${f.r * 1.3}`} dur={`${1.1 + i * 0.3}s`} repeatCount="indefinite" />
         </ellipse>
       ))}
 
-      {/* crushed towers gripped at the feet */}
-      <g fill="#090910">
-        {towers.map((tw, i) => (
-          <path key={i} d={`M ${tw.x} ${GROUND} L ${tw.x + 3} ${tw.topY} L ${tw.x + tw.w} ${tw.topY + 8} L ${tw.x + tw.w} ${GROUND} Z`} />
+      {/* smoke plumes rising into the visible gap */}
+      {smokes.map((s, i) => (
+        <ellipse key={i} cx={s.x} cy={s.y} rx={s.r} ry={s.r * 0.85} fill="url(#tt-smoke)">
+          <animate attributeName="cy" values={`${s.y};${s.y - 24};${s.y}`} dur={`${s.d}s`} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.9;0.55;0.9" dur={`${s.d}s`} repeatCount="indefinite" />
+        </ellipse>
+      ))}
+
+      {/* skyscrapers being crushed */}
+      <g fill="#08080f">
+        {skyscrapers.map((s, i) => (
+          <path key={i} d={`M ${s.x} ${GROUND} L ${s.x + 2} ${s.topY} L ${s.x + s.w} ${s.topY + 7} L ${s.x + s.w} ${GROUND} Z`} />
         ))}
       </g>
 
@@ -176,13 +203,6 @@ export function MachineColossus({
         ))}
       </g>
 
-      {/* scattered debris */}
-      <g fill="#0b0b13">
-        {debris.map((d, i) => (
-          <path key={i} d={d} />
-        ))}
-      </g>
-
       {/* spherical chassis */}
       <circle cx={CX} cy={CY} r={R} fill="#06060c" />
       <path d={`M ${CX - R * 0.82} ${CY + R * 0.5} A ${R} ${R} 0 0 0 ${CX + R * 0.82} ${CY + R * 0.5}`} stroke="rgba(251,191,36,0.22)" strokeWidth="2" fill="none" />
@@ -205,12 +225,10 @@ export function MachineColossus({
 
       {/* the Mainframe hurls a chunk of debris at you */}
       {cfg.throws && (
-        <g>
-          <path d="M -7 -5 L 6 -7 L 9 5 L -2 8 Z" fill="#0d0d16" stroke="rgba(150,172,205,0.4)" strokeWidth="1">
-            <animateMotion path={`M ${CX + R * 2} ${CY - R * 1.4} Q ${CX + 120} ${CY + 120} ${CX + 220} 640`} dur="3.2s" repeatCount="indefinite" />
-            <animateTransform attributeName="transform" type="scale" additive="sum" values="0.4;0.6;2.4" dur="3.2s" repeatCount="indefinite" />
-          </path>
-        </g>
+        <path d="M -7 -5 L 6 -7 L 9 5 L -2 8 Z" fill="#0d0d16" stroke="rgba(150,172,205,0.4)" strokeWidth="1">
+          <animateMotion path={`M ${CX + R * 2} ${CY} Q ${CX + 120} ${CY + 140} ${CX + 210} 640`} dur="3.2s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="scale" additive="sum" values="0.4;0.7;2.6" dur="3.2s" repeatCount="indefinite" />
+        </path>
       )}
     </svg>
   )
