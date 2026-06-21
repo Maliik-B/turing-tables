@@ -114,6 +114,7 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
     abilities: def.abilities,
     cardCount: def.cardCount ?? 'none',
     passive: def.passive ?? '',
+    taunt: move.taunt,
   }
 }
 
@@ -468,6 +469,8 @@ export function reducer(state: GameState, action: Action): GameState {
         if (e) {
           e.intent = m.intent
           e.intentSource = m.source
+          e.taunt = m.taunt
+          if (m.taunt) logLine(s, `${e.name}: "${m.taunt}"`)
         }
       })
       s.enemies.forEach((e) => (e.revealed = null))

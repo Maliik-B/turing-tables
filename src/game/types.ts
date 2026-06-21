@@ -121,6 +121,9 @@ export interface Enemy {
   cardCount: 'none' | 'observed' | 'full'
   // Player-facing Gemini passive label (shown only when a key is active).
   passive: string
+  // The machine's line for its telegraphed move (Gemini-written or scripted
+  // canned) — its "voice", and a subtle read tell (aware vs canned).
+  taunt?: string
 }
 
 // Running tally of how the player has fought across the whole run — fed to the
@@ -168,7 +171,10 @@ export interface GameState {
 export type Action =
   | { type: 'PLAY_CARD'; seat: number; uid: number; targetEnemy?: number }
   | { type: 'END_TURN'; seat: number }
-  | { type: 'SET_INTENTS'; intents: { intent: Intent; source: MoveSource }[] }
+  | {
+      type: 'SET_INTENTS'
+      intents: { intent: Intent; source: MoveSource; taunt?: string }[]
+    }
   | { type: 'ACCUSE'; enemy: number }
   | { type: 'CHOOSE_REWARD'; uid: number | null }
   | { type: 'RESTART' }
