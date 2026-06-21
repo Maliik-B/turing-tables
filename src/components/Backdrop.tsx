@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
-// Atmospheric backdrop: a lone vigil looking out over a ruined machine-grid on
-// the horizon, in fog, under a sky whose stars fade as dawn approaches. All
+// Atmospheric backdrop: a lone vigil looking out over a vast living machine-city
+// on the horizon, in fog, under a sky whose stars fade as dawn approaches. All
 // CSS/SVG, fixed behind the UI. `warmth` runs 0 (deep night) -> 1 (full dawn).
 
 // Deterministic star field — seeded so positions never jump between renders.
@@ -17,44 +17,147 @@ const STARS = (() => {
   }))
 })()
 
-// Broken machine skyline + faint receding floor grid, generated once.
+// A living machine-city skyline: distinct archetypes (data towers, satellite
+// dishes, reactor cooling-towers, lattice pylons, antenna masts, spires, a few
+// broken hulks) over a faint receding grid, with lit windows + blinking
+// beacons. Generated once, seeded so it never jumps between renders.
+type Fill = { d: string; t?: string }
+type Stroke = { d: string; o: number }
+type Light = { x: number; y: number; c: string; r: number }
+type Pt = { x: number; y: number }
 const HORIZON = (() => {
-  let s = 909
+  let s = 4242
   const rnd = () => ((s = (s * 1103515245 + 12345) >>> 0) / 4294967296)
-  const GROUND = 232
-  const pts: Array<[number, number]> = [[0, GROUND]]
-  let x = 0
-  const windows: Array<[number, number]> = []
-  while (x < 1200) {
-    const w = 16 + rnd() * 60
-    const ruined = rnd() > 0.78
-    const topY = ruined ? 246 + rnd() * 22 : 150 + rnd() * 78
-    pts.push([x, topY], [x + w, topY])
-    // a few faint "powered" windows on the taller standing structures
-    if (!ruined && rnd() > 0.55) {
-      windows.push([x + w * 0.5, topY + 14 + rnd() * (GROUND - topY - 24)])
-    }
-    x += w
-  }
-  pts.push([1200, GROUND])
-  const skyline = 'M 0 320 L ' + pts.map((p) => `${p[0]} ${p[1]}`).join(' L ') + ' L 1200 320 Z'
+  const BASE = 320
+  const fills: Fill[] = []
+  const strokes: Stroke[] = []
+  const lights: Light[] = []
+  const beacons: Pt[] = []
 
-  // Receding floor grid: verticals converging to a vanishing point, a few
-  // horizontals; some segments dropped so the grid reads as ruined.
-  const VP = [600, GROUND] as const
-  const grid: string[] = []
-  for (let i = 0; i <= 16; i++) {
-    if (rnd() > 0.86) continue // missing rib
-    const bx = (i / 16) * 1200
-    const startY = 320 - rnd() * 40 // some don't reach the foreground
-    grid.push(`M ${bx.toFixed(0)} 320 L ${VP[0]} ${VP[1]}`.replace('320', startY.toFixed(0)))
+  const windows = (x: number, w: number, topY: number) => {
+    const cols = Math.max(1, Math.floor(w / 10))
+    const gap = w / (cols + 1)
+    for (let ry = topY + 10; ry < BASE - 8; ry += 11) {
+      for (let c = 1; c <= cols; c++) {
+        if (rnd() > 0.5) continue
+        lights.push({
+          x: +(x + c * gap).toFixed(1),
+          y: +ry.toFixed(1),
+          c: rnd() > 0.84 ? 'rgba(251,191,36,0.55)' : 'rgba(120,190,210,0.5)',
+          r: 0.9,
+        })
+      }
+    }
   }
-  const rows = [320, 300, 284, 271, 261, 253, 247, 242, 238]
-  rows.forEach((y) => {
-    if (rnd() > 0.9) return
+
+  const build: Record<string, (x: number, w: number) => void> = {
+    tower(x, w) {
+      const topY = 130 + rnd() * 80
+      fills.push({ d: `M ${x} ${BASE} L ${x} ${topY} L ${x + w} ${topY} L ${x + w} ${BASE} Z` })
+      for (let ry = topY + 8; ry < BASE; ry += 14)
+        strokes.push({ d: `M ${x} ${ry} L ${x + w} ${ry}`, o: 0.08 })
+      windows(x, w, topY)
+      if (rnd() > 0.5) {
+        const cx = +(x + w * (0.3 + rnd() * 0.4)).toFixed(1)
+        const my = +(topY - 16 - rnd() * 14).toFixed(1)
+        strokes.push({ d: `M ${cx} ${topY} L ${cx} ${my}`, o: 0.25 })
+        beacons.push({ x: cx, y: my })
+      }
+    },
+    dish(x, w) {
+      const cx = x + w / 2
+      const stem = 205 + rnd() * 30
+      fills.push({ d: `M ${cx - 2} ${BASE} L ${cx - 2} ${stem} L ${cx + 2} ${stem} L ${cx + 2} ${BASE} Z` })
+      const r = 13 + rnd() * 9
+      fills.push({
+        d: `M ${cx - r} ${stem} A ${r} ${r} 0 0 1 ${cx + r} ${stem} Z`,
+        t: `rotate(${(-20 - rnd() * 24).toFixed(0)} ${cx.toFixed(1)} ${stem})`,
+      })
+      lights.push({ x: +cx.toFixed(1), y: +(stem - 2).toFixed(1), c: 'rgba(120,190,210,0.5)', r: 1 })
+    },
+    cooling(x, w) {
+      const topY = 178 + rnd() * 32
+      const k = w * 0.16
+      const mid = (BASE + topY) / 2
+      fills.push({
+        d: `M ${x} ${BASE} C ${x + k} ${mid}, ${x + w * 0.32} ${topY + 28}, ${x + w * 0.3} ${topY} L ${x + w * 0.7} ${topY} C ${x + w * 0.68} ${topY + 28}, ${x + w - k} ${mid}, ${x + w} ${BASE} Z`,
+      })
+      lights.push({ x: +(x + w / 2).toFixed(1), y: +(topY + 3).toFixed(1), c: 'rgba(251,146,60,0.5)', r: 2 })
+    },
+    lattice(x, w) {
+      const topY = 120 + rnd() * 64
+      const lx = x + w * 0.18, rx = x + w * 0.82, ltx = x + w * 0.36, rtx = x + w * 0.64
+      strokes.push({ d: `M ${lx} ${BASE} L ${ltx} ${topY}`, o: 0.22 })
+      strokes.push({ d: `M ${rx} ${BASE} L ${rtx} ${topY}`, o: 0.22 })
+      const segs = 5
+      for (let i = 1; i <= segs; i++) {
+        const a = (i - 1) / segs, b = i / segs
+        const yA = BASE + (topY - BASE) * a, yB = BASE + (topY - BASE) * b
+        const xLa = lx + (ltx - lx) * a, xRa = rx + (rtx - rx) * a
+        const xLb = lx + (ltx - lx) * b, xRb = rx + (rtx - rx) * b
+        strokes.push({ d: `M ${xLa.toFixed(1)} ${yA.toFixed(1)} L ${xRa.toFixed(1)} ${yA.toFixed(1)}`, o: 0.12 })
+        strokes.push({ d: `M ${xLa.toFixed(1)} ${yA.toFixed(1)} L ${xRb.toFixed(1)} ${yB.toFixed(1)}`, o: 0.09 })
+        strokes.push({ d: `M ${xRa.toFixed(1)} ${yA.toFixed(1)} L ${xLb.toFixed(1)} ${yB.toFixed(1)}`, o: 0.09 })
+      }
+      beacons.push({ x: +((ltx + rtx) / 2).toFixed(1), y: +topY.toFixed(1) })
+    },
+    antenna(x, w) {
+      const cx = +(x + w / 2).toFixed(1)
+      const top = +(108 + rnd() * 58).toFixed(1)
+      strokes.push({ d: `M ${cx} ${BASE} L ${cx} ${top}`, o: 0.3 })
+      strokes.push({ d: `M ${cx} ${top + 12} L ${x + 2} ${BASE}`, o: 0.07 })
+      strokes.push({ d: `M ${cx} ${top + 12} L ${x + w - 2} ${BASE}`, o: 0.07 })
+      beacons.push({ x: cx, y: top })
+    },
+    spire(x, w) {
+      const topY = 132 + rnd() * 56
+      fills.push({ d: `M ${x + w * 0.32} ${BASE} L ${x + w * 0.46} ${topY} L ${x + w * 0.54} ${topY} L ${x + w * 0.68} ${BASE} Z` })
+      beacons.push({ x: +(x + w / 2).toFixed(1), y: +topY.toFixed(1) })
+    },
+    broken(x, w) {
+      const t = 224 + rnd() * 30
+      fills.push({ d: `M ${x} ${BASE} L ${x} ${t + 6} L ${x + w * 0.25} ${t + 12} L ${x + w * 0.45} ${t - 4} L ${x + w * 0.6} ${t + 16} L ${x + w * 0.8} ${t + 2} L ${x + w} ${t + 10} L ${x + w} ${BASE} Z` })
+    },
+  }
+
+  const order = ['tower', 'dish', 'tower', 'lattice', 'cooling', 'tower', 'antenna', 'broken', 'tower', 'spire', 'dish', 'tower', 'lattice', 'tower', 'cooling', 'antenna', 'tower', 'broken', 'tower']
+  let x = -8
+  let k = 0
+  while (x < 1210) {
+    const kind = order[k % order.length] || 'tower'
+    k++
+    const w =
+      kind === 'antenna'
+        ? 24 + rnd() * 16
+        : kind === 'dish' || kind === 'spire'
+          ? 38 + rnd() * 24
+          : 50 + rnd() * 46
+    build[kind]?.(x, w)
+    x += w + 4 + rnd() * 16
+  }
+
+  // Far depth layer: small dim slabs receding into haze.
+  const far: string[] = []
+  let fx = 0
+  while (fx < 1200) {
+    const fw = 18 + rnd() * 40
+    const ft = 236 + rnd() * 40
+    far.push(`M ${fx.toFixed(0)} ${BASE} L ${fx.toFixed(0)} ${ft.toFixed(0)} L ${(fx + fw).toFixed(0)} ${ft.toFixed(0)} L ${(fx + fw).toFixed(0)} ${BASE} Z`)
+    fx += fw + 6 + rnd() * 22
+  }
+
+  // Faint receding floor grid (verticals to a vanishing point + a few rows).
+  const grid: string[] = []
+  for (let i = 0; i <= 18; i++) {
+    if (rnd() > 0.9) continue
+    grid.push(`M ${((i / 18) * 1200).toFixed(0)} ${BASE} L 600 250`)
+  }
+  ;[320, 306, 295, 287, 281, 277].forEach((y) => {
+    if (rnd() > 0.92) return
     grid.push(`M 0 ${y} L 1200 ${y}`)
   })
-  return { skyline, windows, grid }
+
+  return { fills, strokes, lights, beacons, far, grid }
 })()
 
 export function Backdrop({ warmth, lost }: { warmth: number; lost: boolean }) {
@@ -96,30 +199,61 @@ export function Backdrop({ warmth, lost }: { warmth: number; lost: boolean }) {
         {stars}
       </svg>
 
-      {/* Ruined machine-grid horizon — a dark silhouette over a cold, dying
-          floor grid, set against the warm dawn glow behind it. */}
+      {/* Living machine-city horizon — distinct machine archetypes over a faint
+          receding grid, lit windows + blinking beacons, hazing into fog and set
+          against the warm dawn glow behind. */}
       <svg
         className="absolute inset-x-0 bottom-0"
-        style={{ height: '34vh', zIndex: -9 }}
+        style={{ height: '36vh', zIndex: -9 }}
         width="100%"
         viewBox="0 0 1200 320"
         preserveAspectRatio="xMidYMax slice"
       >
-        <g stroke="rgba(120,150,180,0.13)" strokeWidth="0.8" fill="none">
+        {/* far depth layer */}
+        <g fill="#0c0d18">
+          {HORIZON.far.map((d, i) => (
+            <path key={i} d={d} />
+          ))}
+        </g>
+        {/* receding floor grid */}
+        <g stroke="rgba(120,150,180,0.10)" strokeWidth="0.8" fill="none">
           {HORIZON.grid.map((d, i) => (
             <path key={i} d={d} />
           ))}
         </g>
-        <path d={HORIZON.skyline} fill="#06060b" opacity="0.97" />
-        {HORIZON.windows.map((w, i) => (
-          <rect key={i} x={w[0]} y={w[1]} width="1.6" height="1.6" fill="rgba(120,180,200,0.5)" />
+        {/* near silhouette */}
+        <g fill="#06060b">
+          {HORIZON.fills.map((f, i) => (
+            <path key={i} d={f.d} transform={f.t} />
+          ))}
+        </g>
+        {/* steel detail: racks, lattice bracing, masts, guy-wires */}
+        <g stroke="#88a0c0" fill="none" strokeWidth="0.9" strokeLinecap="round">
+          {HORIZON.strokes.map((st, i) => (
+            <path key={i} d={st.d} strokeOpacity={st.o} />
+          ))}
+        </g>
+        {/* lit windows + reactor glow */}
+        {HORIZON.lights.map((l, i) => (
+          <circle key={i} cx={l.x} cy={l.y} r={l.r} fill={l.c} />
         ))}
-        {/* fog fade — dissolve the grid + skyline base into haze */}
+        {/* blinking beacons */}
+        {HORIZON.beacons.map((b, i) => (
+          <circle key={i} cx={b.x} cy={b.y} r="1.5" fill="rgba(248,113,113,0.9)">
+            <animate
+              attributeName="opacity"
+              values="1;0.15;1"
+              dur={`${1.6 + (i % 4) * 0.5}s`}
+              repeatCount="indefinite"
+            />
+          </circle>
+        ))}
+        {/* fog fade — dissolve the bases into haze */}
         <rect x="0" y="120" width="1200" height="200" fill="url(#tt-fog-grad)" />
         <defs>
           <linearGradient id="tt-fog-grad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#07070c" stopOpacity="0" />
-            <stop offset="100%" stopColor="#07070c" stopOpacity="0.78" />
+            <stop offset="100%" stopColor="#07070c" stopOpacity="0.7" />
           </linearGradient>
         </defs>
       </svg>
