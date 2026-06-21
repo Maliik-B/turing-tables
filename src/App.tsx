@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import { createInitialState, reducer } from './game/engine'
 import { decideMove, buildDossier } from './game/brain'
 import type { GeminiStatus } from './game/brain'
+import { modelTiming } from './game/gemini'
 import { BattleScreen } from './components/BattleScreen'
 import { MenuScreen } from './components/MenuScreen'
 import { IntroScroll } from './components/IntroScroll'
@@ -20,25 +21,36 @@ function App() {
   const [apiKey, setApiKey] = useState<string>(
     () => localStorage.getItem(KEY_STORAGE) ?? '',
   )
-  const [apiStatus, setApiStatus] = useState<GeminiStatus | null>(
-    () => (localStorage.getItem(STATUS_STORAGE) as GeminiStatus | null) || null,
-  )
-  // Persist the last Gemini outcome so the menu can warn about a maxed or bad
-  // key on a fresh load (there is no in-game return to the menu otherwise).
-  const recordApiStatus = (s: GeminiStatus) => {
-    setApiStatus(s)
+  const [apiStatusByModel, setApiStatusByModel] = useState<
+    Record<string, GeminiStatus>
+  >(() => {
     try {
-      localStorage.setItem(STATUS_STORAGE, s)
+      return JSON.parse(localStorage.getItem(STATUS_STORAGE) || '{}') || {}
     } catch {
-      // ignore storage failures
+      return {}
     }
+  })
+  // Track Gemini health PER MODEL (not globally) so the battle banner reflects
+  // the current machine's own pool, not a stale rate-limit bled over from a
+  // different-tier machine. Persisted so the menu can warn on a fresh load.
+  const recordApiStatus = (model: string, s: GeminiStatus) => {
+    setApiStatusByModel((prev) => {
+      if (prev[model] === s) return prev
+      const next = { ...prev, [model]: s }
+      try {
+        localStorage.setItem(STATUS_STORAGE, JSON.stringify(next))
+      } catch {
+        // ignore storage failures
+      }
+      return next
+    })
   }
   const [screen, setScreen] = useState<Screen>('menu')
 
   const updateKey = (k: string) => {
     setApiKey(k)
-    // A changed key invalidates any prior rate-limit / bad-key warning.
-    setApiStatus(null)
+    // A changed key invalidates any prior rate-limit / bad-key warnings.
+    setApiStatusByModel({})
     try {
       localStorage.removeItem(STATUS_STORAGE)
     } catch {
@@ -98,7 +110,14 @@ function App() {
     if (decidedIntentKey.current === key) return
     decidedIntentKey.current = key
     const alive = state.enemies.filter((e) => e.hp > 0)
-    const minThink = apiKey ? 1100 + Math.floor(Math.random() * 1100) : 150
+    // Mask the "thinking" pause to the current machine's tier so scripted turns
+    // match that model's real cadence (and the boss gets a longer beat). ELIZA
+    // (no model) and keyless play stay near-instant.
+    const first = alive[0]
+    const tm = apiKey && first?.model ? modelTiming(first.model) : null
+    const minThink = tm
+      ? tm.thinkMin + Math.floor(Math.random() * (tm.thinkMax - tm.thinkMin))
+      : 150
     void (async () => {
       const [intents] = await Promise.all([
         Promise.all(
@@ -146,17 +165,13 @@ function App() {
       // Apply only if this is still the current round; a later round resets the
       // key, so a stale in-flight decision is dropped instead of dispatched.
       if (decidedIntentKey.current === key) {
-        // Surface API health so a keyed player isn't confused when the machine
-        // quietly falls back to scripted: prefer the most actionable signal.
-        const statuses = intents.map((i) => i.status)
-        const next: GeminiStatus | null = statuses.includes('bad_key')
-          ? 'bad_key'
-          : statuses.includes('rate_limit')
-            ? 'rate_limit'
-            : statuses.includes('ok')
-              ? 'ok'
-              : null
-        if (next) recordApiStatus(next)
+        // Record each machine's API health against ITS model, so the battle
+        // banner reflects the current enemy's pool rather than a stale
+        // rate-limit carried over from a different-tier machine.
+        alive.forEach((e, i) => {
+          const st = intents[i]?.status
+          if (st && e.model) recordApiStatus(e.model, st)
+        })
         dispatch({ type: 'SET_INTENTS', intents })
       }
     })()
@@ -215,7 +230,7 @@ function App() {
           onApiKey={updateKey}
           onBegin={() => setScreen('intro')}
           record={record}
-          apiStatus={apiStatus}
+          apiStatusByModel={apiStatusByModel}
         />
       )}
       {screen === 'intro' && <IntroScroll onContinue={() => setScreen('game')} />}
@@ -226,7 +241,7 @@ function App() {
           apiKey={apiKey}
           onApiKey={updateKey}
           record={record}
-          apiStatus={apiStatus}
+          apiStatusByModel={apiStatusByModel}
         />
       )}
     </div>

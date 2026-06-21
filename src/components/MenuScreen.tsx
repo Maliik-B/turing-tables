@@ -8,15 +8,22 @@ export function MenuScreen({
   onApiKey,
   onBegin,
   record,
-  apiStatus,
+  apiStatusByModel,
 }: {
   apiKey: string
   onApiKey: (key: string) => void
   onBegin: () => void
   record: { wins: number; losses: number }
-  apiStatus: GeminiStatus | null
+  apiStatusByModel: Record<string, GeminiStatus>
 }) {
   const [showKeyHelp, setShowKeyHelp] = useState(false)
+  // Worst-case summary across the key's models for the menu warning.
+  const vals = Object.values(apiStatusByModel)
+  const apiStatus: GeminiStatus | null = vals.includes('bad_key')
+    ? 'bad_key'
+    : vals.includes('rate_limit')
+      ? 'rate_limit'
+      : null
   // Enter begins the run (keyboard-first play).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

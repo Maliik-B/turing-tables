@@ -4,7 +4,29 @@ import type { IntentType } from './types'
 
 const ENDPOINT = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
-const TIMEOUT_MS = 5000
+// Per-model timeout + "thinking"-delay mask, each sized to that model's real
+// latency: fast tiers keep fights snappy, the slow Gemini-3 boss gets room to
+// answer (it runs ~4-5s on its heavy prompt), and scripted turns at each tier
+// match that tier's real cadence so the imitation game stays timing-blind.
+export function modelTiming(model: string | null | undefined): {
+  timeoutMs: number
+  thinkMin: number
+  thinkMax: number
+} {
+  switch (model) {
+    case 'gemini-2.5-flash-lite':
+      return { timeoutMs: 4000, thinkMin: 700, thinkMax: 1700 }
+    case 'gemini-2.5-flash':
+      return { timeoutMs: 6000, thinkMin: 1800, thinkMax: 3800 }
+    case 'gemini-3-flash-preview':
+      // Heavy boss prompt (full deck + dossier) runs ~4-7.5s and is variable,
+      // so a generous timeout plus a long, dramatic "thinking" beat that mostly
+      // covers real latency (keeping the read timing-blind at the finale).
+      return { timeoutMs: 10000, thinkMin: 3000, thinkMax: 6000 }
+    default:
+      return { timeoutMs: 5000, thinkMin: 1100, thinkMax: 2200 }
+  }
+}
 
 // Outcome of a Gemini call, so the UI can tell a keyed player when their free
 // quota is exhausted (rate_limit) or their key is bad, instead of silently
@@ -28,7 +50,7 @@ export async function geminiDecideMove(
   memory?: string,
 ): Promise<{ move: EnemyMove | null; status: GeminiStatus }> {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), modelTiming(model).timeoutMs)
   const started = performance.now()
   try {
     const actions = ['attack', 'block', ...ctx.abilities]
