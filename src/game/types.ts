@@ -47,7 +47,14 @@ export interface Card extends CardDef {
   uid: number
 }
 
-export type IntentType = 'attack' | 'block' | 'weaken' | 'expose' | 'drain'
+export type IntentType =
+  | 'attack'
+  | 'block'
+  | 'weaken'
+  | 'expose'
+  | 'drain'
+  // Mainframe adaptation vs a turtling player: strip ALL their block, then hit.
+  | 'sunder'
 
 export interface Intent {
   type: IntentType
