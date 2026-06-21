@@ -178,6 +178,7 @@ function App() {
                 abilities: e.abilities,
                 player: human
                   ? {
+                      hp: human.hp,
                       hpRatio: human.hp / human.maxHp,
                       block: human.block,
                       vulnerable: human.vulnerable,

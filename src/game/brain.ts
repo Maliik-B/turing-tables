@@ -56,10 +56,19 @@ export async function decideMove(
         // A thinking machine may telegraph a feint: show a false move now, do the
         // real one on its turn. Only Gemini moves bluff, so a trustworthy
         // telegraph means the move was scripted.
-        const decoy =
+        let decoy =
           opts.bluffChance && Math.random() < opts.bluffChance
             ? makeDecoy(move.intent, ctx)
             : undefined
+        // Fairness: never feint into a kill. A harmless decoy tells the player
+        // not to brace, so if the hidden hit could be lethal (worst case: they
+        // are Vulnerable, x1.5), telegraph honestly instead of cheap-killing.
+        const dmg =
+          move.intent.type === 'attack' ||
+          move.intent.type === 'drain' ||
+          move.intent.type === 'sunder'
+        if (decoy && dmg && ctx.player && move.intent.value * 1.5 >= ctx.player.hp)
+          decoy = undefined
         return { ...move, taunt, decoy, status }
       }
       return { ...decideEnemyMove(ctx), status }
