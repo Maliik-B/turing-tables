@@ -222,8 +222,12 @@ function App() {
               }) 45%, transparent 78%)`,
         }}
       />
-      {/* Stars, ruined-grid horizon, drifting fog, grain — atmosphere. */}
-      <Backdrop warmth={warmth} lost={lost} />
+      {/* Stars, machine-city horizon, the looming enemy, fog, grain. */}
+      <Backdrop
+        warmth={warmth}
+        lost={lost}
+        tier={screen === 'game' && !won && !lost ? state.encounter : null}
+      />
       {screen === 'menu' && (
         <MenuScreen
           apiKey={apiKey}
