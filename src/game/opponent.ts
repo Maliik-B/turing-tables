@@ -79,7 +79,7 @@ const SCRIPTED_TAUNTS: Record<string, string[]> = {
   expose: ['Vulnerability identified.', 'Exposing weak points.'],
   drain: ['Extracting resources.', 'Your loss is my gain.'],
 }
-function scriptedTaunt(type: IntentType): string {
+export function scriptedTaunt(type: IntentType): string {
   const pool = SCRIPTED_TAUNTS[type] ?? SCRIPTED_TAUNTS.attack
   return pool[Math.floor(Math.random() * pool.length)] ?? ''
 }
