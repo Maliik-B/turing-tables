@@ -65,7 +65,7 @@ export const RUN: EncounterDef[] = [
       'Runs Gemini Flash — sharper, and it has started to deceive.',
     ],
     cardCount: 'observed',
-    passive: 'Reads your board · counts the cards you play',
+    passive: 'Reads your board · counts your cards · feints its telegraph',
   },
   {
     name: 'THE MAINFRAME',
@@ -82,7 +82,7 @@ export const RUN: EncounterDef[] = [
       'Runs Gemini 3 Flash, knows your whole deck, and has studied your prior trials.',
     ],
     cardCount: 'full',
-    passive: 'Reads your board · knows your entire deck',
+    passive: 'Reads your board · knows your deck · feints often',
   },
 ]
 

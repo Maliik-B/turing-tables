@@ -145,7 +145,9 @@ function reconcileSever(p: Combatant, hasKey: boolean, pastEliza: boolean): void
 // provoked, not a gotcha. (Block-counter first; purge/thorns are future tiers.)
 function adaptToDossier(enemy: Enemy, stats: RunStats): void {
   if (!enemy.remembers) return
-  const turtles = stats.blockGained >= 40 || stats.skills > stats.attacks * 1.15
+  // Only genuine turtling: a skill-dominant deck, or heavy block reliance across
+  // the run. (40 was too low — a balanced player who blocks a little hit it.)
+  const turtles = stats.skills > stats.attacks * 1.2 || stats.blockGained >= 70
   if (turtles && !enemy.abilities.includes('sunder')) {
     enemy.abilities = [...enemy.abilities, 'sunder']
     enemy.intel = [

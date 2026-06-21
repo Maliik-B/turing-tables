@@ -16,6 +16,7 @@ export interface BrainContext {
   // The human's current board. The Gemini brain reads and reacts to this; the
   // scripted brain ignores it (being blind to it is the real tell to hunt).
   player?: {
+    hp: number
     hpRatio: number
     block: number
     vulnerable: number
