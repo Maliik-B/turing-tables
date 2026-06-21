@@ -456,7 +456,7 @@ export function BattleScreen({
             </h2>
             <p className="max-w-md text-sm leading-relaxed text-neutral-400">
               ELIZA was a dead-end husk — no link to the grid, nothing to cut.
-              The machines below are wired into the central network. Sever drops
+              The machines after are wired into the central network. Sever drops
               one to blind, scripted routines for two turns. You'll want it.
             </p>
             <CardView
