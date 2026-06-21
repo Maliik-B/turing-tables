@@ -38,6 +38,18 @@ export function EnemyPanel({
       : it.type === 'block'
         ? 'text-sky-300'
         : 'text-amber-300'
+  // Spell out what each telegraphed move actually does — especially that
+  // weaken/expose deal no damage, and that blocking a drain denies its heal.
+  const intentTitle =
+    it.type === 'attack'
+      ? 'Deals this much damage. Block reduces it.'
+      : it.type === 'drain'
+        ? 'Damages you and heals itself for half the damage dealt. Block the hit to deny the heal.'
+        : it.type === 'block'
+          ? 'Shields itself. Its block clears the moment it next acts.'
+          : it.type === 'weaken'
+            ? 'Applies Weak (you deal -25%) — no damage this turn.'
+            : 'Applies Vulnerable (you take +50%) — no damage this turn.'
   return (
     <div
       className={`group relative rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 ${
@@ -70,7 +82,7 @@ export function EnemyPanel({
           )}
           {enemy.corruption > 0 && (
             <span
-              title="Corruption: bites this much at the start of the enemy's turn, then fades by 1."
+              title="Corruption: bites this much before the enemy acts each turn (can finish it pre-emptively), then fades by 1. Re-applying stacks."
               className="rounded bg-lime-500/20 px-2 py-0.5 text-xs text-lime-300"
             >
               ☣ {enemy.corruption}
@@ -97,7 +109,9 @@ export function EnemyPanel({
           <p className="animate-pulse text-xs text-amber-300">Thinking…</p>
         ) : (
           <>
-            <p className={`text-xs ${intentColor}`}>{intentText}</p>
+            <p className={`text-xs ${intentColor}`} title={intentTitle}>
+              {intentText}
+            </p>
             {enemy.vulnerable > 0 && (
               <span
                 title="Vulnerable: this machine takes +50% damage. Number = rounds left."
