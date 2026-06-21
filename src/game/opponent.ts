@@ -70,7 +70,7 @@ export function makeDecoy(real: Intent, ctx: BrainContext): Intent {
     return { type: t, value: t === 'block' ? 8 : (ABILITY_INFO[t]?.value ?? 2) }
   }
   // Real move is block/weaken/expose: telegraph a believable incoming hit.
-  return { type: 'attack', value: 9 + Math.floor(Math.random() * 6) }
+  return { type: 'attack', value: 9 + Math.floor(Math.random() * 5) }
 }
 
 // The scripted ("imitation") opponent brain — the free, offline fallback and
@@ -148,7 +148,7 @@ function decideCore(ctx: BrainContext): EnemyMove {
         source: 'scripted',
       }
     }
-    const base = 9 + Math.floor(Math.random() * 6) // 9-14 (~+15% over the old band)
+    const base = 9 + Math.floor(Math.random() * 5) // 9-13 (~+10% over the old band)
     return {
       intent: { type: 'attack', value: enraged ? base + 4 : base },
       source: 'scripted',
