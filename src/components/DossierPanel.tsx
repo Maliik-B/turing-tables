@@ -28,7 +28,12 @@ function observations(s: RunStats): Obs[] {
         ? 'Plays defensive — leans on block and skills.'
         : 'Balanced — mixes attack and defense.'
   out.push({ find: style, sub: `pattern · ${s.attacks} attacks / ${s.skills} skills`, ...conf(total, 18) })
-  const top = Object.entries(s.cardsPlayed).sort((a, b) => b[1] - a[1])[0]
+  // Surface the most-played NON-basic card: "Favors Defend" (3 starter copies)
+  // is noise; "Favors Leech / Corrupt" is an actual tell. Fall back to the
+  // overall top only if nothing but basics has been played.
+  const BASICS = new Set(['Strike', 'Defend', 'Quick Jab', 'Ping'])
+  const sorted = Object.entries(s.cardsPlayed).sort((a, b) => b[1] - a[1])
+  const top = sorted.find(([name]) => !BASICS.has(name)) ?? sorted[0]
   if (top)
     out.push({
       find: `Favors ${top[0]} — ${top[1]} plays.`,
