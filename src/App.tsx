@@ -226,7 +226,14 @@ function App() {
       <Backdrop
         warmth={warmth}
         lost={lost}
-        tier={screen === 'game' && !won && !lost ? state.encounter : null}
+        tier={
+          screen === 'game' && !won && !lost
+            ? state.encounter
+            : screen === 'menu'
+              ? 3
+              : null
+        }
+        distant={screen === 'menu'}
       />
       {screen === 'menu' && (
         <MenuScreen
