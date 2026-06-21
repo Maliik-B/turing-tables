@@ -53,7 +53,7 @@ const HORIZON = (() => {
 
   const build: Record<string, (x: number, w: number) => void> = {
     tower(x, w) {
-      const topY = 130 + rnd() * 80
+      const topY = 106 + rnd() * 84
       fills.push({ d: `M ${x} ${BASE} L ${x} ${topY} L ${x + w} ${topY} L ${x + w} ${BASE} Z` })
       for (let ry = topY + 8; ry < BASE; ry += 14)
         strokes.push({ d: `M ${x} ${ry} L ${x + w} ${ry}`, o: 0.08 })
@@ -158,7 +158,13 @@ const HORIZON = (() => {
     grid.push(`M 0 ${y} L 1200 ${y}`)
   })
 
-  return { fills, strokes, lights, beacons, far, grid }
+  // scattered fires — the city is burning as the machines tear through it
+  const fires: Array<{ x: number; y: number; r: number }> = []
+  for (let i = 0; i < 9; i++) {
+    fires.push({ x: 50 + (i / 9) * 1110 + (rnd() - 0.5) * 70, y: 196 + rnd() * 70, r: 11 + rnd() * 15 })
+  }
+
+  return { fills, strokes, lights, beacons, far, grid, fires }
 })()
 
 export function Backdrop({
@@ -220,7 +226,7 @@ export function Backdrop({
           against the warm dawn glow behind. */}
       <svg
         className="absolute inset-x-0 bottom-0"
-        style={{ height: '36vh', zIndex: -9 }}
+        style={{ height: '40vh', zIndex: -9 }}
         width="100%"
         viewBox="0 0 1200 320"
         preserveAspectRatio="xMidYMax slice"
@@ -266,11 +272,27 @@ export function Backdrop({
         ))}
         {/* fog fade — dissolve the bases into haze */}
         <rect x="0" y="120" width="1200" height="200" fill="url(#tt-fog-grad)" />
+        {/* the city burns — fire glows through the haze */}
+        {HORIZON.fires.map((f, i) => (
+          <ellipse key={`fire${i}`} cx={f.x} cy={f.y} rx={f.r} ry={f.r * 1.5} fill="url(#tt-cityfire)">
+            <animate
+              attributeName="opacity"
+              values="0.5;0.95;0.45;0.75"
+              dur={`${1 + (i % 4) * 0.3}s`}
+              repeatCount="indefinite"
+            />
+          </ellipse>
+        ))}
         <defs>
           <linearGradient id="tt-fog-grad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#07070c" stopOpacity="0" />
             <stop offset="100%" stopColor="#07070c" stopOpacity="0.82" />
           </linearGradient>
+          <radialGradient id="tt-cityfire" cx="50%" cy="62%">
+            <stop offset="0%" stopColor="#fde68a" stopOpacity="0.9" />
+            <stop offset="40%" stopColor="#f97316" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#7c2d12" stopOpacity="0" />
+          </radialGradient>
         </defs>
       </svg>
 
