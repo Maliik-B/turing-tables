@@ -86,8 +86,9 @@ export function MenuScreen({
         {apiStatus === 'rate_limit' ? (
           <p className="mt-1.5 text-left text-[11px] leading-snug text-amber-400/90">
             ⚠ This key recently hit its Gemini quota. It may still be maxed until
-            your free limit resets (midnight Pacific, ~3 AM ET). You can still
-            play; the machines fall back to their scripted imitation.
+            your free limit resets (midnight Pacific, ~3 AM ET), or upgrade your
+            Google AI plan for more. You can still play; the machines fall back
+            to their scripted imitation.
           </p>
         ) : apiStatus === 'bad_key' ? (
           <p className="mt-1.5 text-left text-[11px] leading-snug text-red-400/90">
@@ -160,6 +161,11 @@ export function MenuScreen({
               Free, no credit card. Your key stays in your browser
               (localStorage) and is sent only to Google, never to us. There is
               no backend.
+            </p>
+            <p className="mt-1.5 text-[11px] leading-snug text-neutral-600">
+              A free key is good for roughly 15 to 25 runs before its daily
+              limit resets (midnight Pacific). If you pop it often, upgrading
+              your Google AI plan lifts the cap.
             </p>
           </div>
         )}
