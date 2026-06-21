@@ -234,6 +234,7 @@ function App() {
               : null
         }
         distant={screen === 'menu'}
+        cityDamage={screen === 'game' ? Math.min(1, state.encounter / 3) : 0}
       />
       {screen === 'menu' && (
         <MenuScreen

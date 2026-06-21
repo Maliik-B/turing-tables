@@ -158,13 +158,19 @@ const HORIZON = (() => {
     grid.push(`M 0 ${y} L 1200 ${y}`)
   })
 
-  // scattered fires — the city is burning as the machines tear through it
-  const fires: Array<{ x: number; y: number; r: number }> = []
-  for (let i = 0; i < 9; i++) {
-    fires.push({ x: 50 + (i / 9) * 1110 + (rnd() - 0.5) * 70, y: 196 + rnd() * 70, r: 11 + rnd() * 15 })
+  // burning ruins that ignite progressively as the siege deepens: each site has
+  // a damage threshold and only lights once cityDamage passes it.
+  const sites: Array<{ x: number; y: number; s: number; threshold: number }> = []
+  for (let i = 0; i < 7; i++) {
+    sites.push({
+      x: 70 + (i / 7) * 1080 + (rnd() - 0.5) * 80,
+      y: 208 + rnd() * 56,
+      s: 0.85 + rnd() * 0.7,
+      threshold: 0.12 + (i / 7) * 0.78 + (rnd() - 0.5) * 0.16,
+    })
   }
 
-  return { fills, strokes, lights, beacons, far, grid, fires }
+  return { fills, strokes, lights, beacons, far, grid, sites }
 })()
 
 export function Backdrop({
@@ -172,6 +178,7 @@ export function Backdrop({
   lost,
   tier,
   distant = false,
+  cityDamage = 0,
 }: {
   warmth: number
   lost: boolean
@@ -179,6 +186,8 @@ export function Backdrop({
   tier?: number | null
   // A faint, far tease (the menu) vs the full looming presence (in battle).
   distant?: boolean
+  // 0 (pristine) -> 1 (heavily ravaged): drives progressive city destruction.
+  cityDamage?: number
 }) {
   const starOpacity = lost ? 0.55 : Math.max(0, 0.95 - warmth * 0.82)
   const fogTint = lost ? 'rgba(148,163,184,0.05)' : `rgba(${Math.round(160 + warmth * 70)},${Math.round(150 + warmth * 40)},${Math.round(190 - warmth * 60)},0.055)`
@@ -272,17 +281,35 @@ export function Backdrop({
         ))}
         {/* fog fade — dissolve the bases into haze */}
         <rect x="0" y="120" width="1200" height="200" fill="url(#tt-fog-grad)" />
-        {/* the city burns — fire glows through the haze */}
-        {HORIZON.fires.map((f, i) => (
-          <ellipse key={`fire${i}`} cx={f.x} cy={f.y} rx={f.r} ry={f.r * 1.5} fill="url(#tt-cityfire)">
-            <animate
-              attributeName="opacity"
-              values="0.5;0.95;0.45;0.75"
-              dur={`${1 + (i % 4) * 0.3}s`}
-              repeatCount="indefinite"
-            />
-          </ellipse>
-        ))}
+        {/* burning ruins (progressive): flame tongues + glow + smoke, not ovals.
+            Only sites whose threshold the siege has passed are alight. */}
+        {HORIZON.sites
+          .filter((s) => s.threshold <= cityDamage)
+          .map((s, i) => {
+            const b = s.y + 3
+            return (
+              <g key={`site${i}`}>
+                <ellipse cx={s.x} cy={s.y} rx={13 * s.s} ry={18 * s.s} fill="url(#tt-cityfire)" opacity="0.4" />
+                {[0, 1, 2].map((k) => {
+                  const fx = s.x + (k - 1) * 7 * s.s
+                  const h = (15 + k * 5) * s.s
+                  return (
+                    <path
+                      key={k}
+                      d={`M ${fx} ${b} C ${fx - 5 * s.s} ${b - h * 0.45} ${fx - 2 * s.s} ${b - h * 0.8} ${fx} ${b - h} C ${fx + 2 * s.s} ${b - h * 0.8} ${fx + 5 * s.s} ${b - h * 0.45} ${fx} ${b} Z`}
+                      fill="url(#tt-flame)"
+                    >
+                      <animate attributeName="opacity" values="0.9;0.5;1;0.7" dur={`${0.5 + k * 0.2}s`} repeatCount="indefinite" />
+                    </path>
+                  )
+                })}
+                <ellipse cx={s.x} cy={s.y - 26 * s.s} rx={15 * s.s} ry={19 * s.s} fill="url(#tt-citysmoke)">
+                  <animate attributeName="cy" values={`${s.y - 26 * s.s};${s.y - 46 * s.s};${s.y - 26 * s.s}`} dur="6s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.8;0.5;0.8" dur="6s" repeatCount="indefinite" />
+                </ellipse>
+              </g>
+            )
+          })}
         <defs>
           <linearGradient id="tt-fog-grad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#07070c" stopOpacity="0" />
@@ -292,6 +319,15 @@ export function Backdrop({
             <stop offset="0%" stopColor="#fde68a" stopOpacity="0.9" />
             <stop offset="40%" stopColor="#f97316" stopOpacity="0.6" />
             <stop offset="100%" stopColor="#7c2d12" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="tt-flame" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#fde047" stopOpacity="0.95" />
+            <stop offset="50%" stopColor="#f97316" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
+          </linearGradient>
+          <radialGradient id="tt-citysmoke">
+            <stop offset="0%" stopColor="#2a2730" stopOpacity="0.42" />
+            <stop offset="100%" stopColor="#2a2730" stopOpacity="0" />
           </radialGradient>
         </defs>
       </svg>
