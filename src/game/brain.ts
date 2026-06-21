@@ -1,6 +1,6 @@
 import type { BrainContext, EnemyMove } from './opponent'
 import type { RunStats } from './types'
-import { decideEnemyMove } from './opponent'
+import { decideEnemyMove, scriptedTaunt } from './opponent'
 import { geminiDecideMove, type GeminiStatus } from './gemini'
 
 export type { GeminiStatus }
@@ -19,6 +19,10 @@ export interface BrainOptions {
 // Gemini-tier enemy that isn't Severed). The rest are the scripted "imitation",
 // mixed in unpredictably so the guess-check is a genuine test.
 const GEMINI_SHARE = 0.7
+// Share of Gemini's OWN turns where it borrows the scripted brain's flat canned
+// voice instead of a context-aware line, so a generic taunt is no longer a
+// reliable "this was the imitation" tell.
+const CANNED_SHARE = 0.33
 
 export async function decideMove(
   ctx: BrainContext,
@@ -39,7 +43,15 @@ export async function decideMove(
       )
       // Carry the API status onto the move (or onto the scripted fallback when
       // Gemini failed) so the UI can flag a rate-limited or rejected key.
-      if (move) return { ...move, status }
+      if (move) {
+        // Sometimes let Gemini speak the scripted brain's flat canned line, so
+        // a generic taunt no longer gives away that a turn was the imitation.
+        const taunt =
+          Math.random() < CANNED_SHARE
+            ? scriptedTaunt(move.intent.type)
+            : move.taunt
+        return { ...move, taunt, status }
+      }
       return { ...decideEnemyMove(ctx), status }
     } catch {
       // fall through to scripted
