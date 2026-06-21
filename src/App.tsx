@@ -11,6 +11,10 @@ import { Backdrop } from './components/Backdrop'
 const KEY_STORAGE = 'tt_gemini_key'
 const RECORD_STORAGE = 'tt_record'
 const STATUS_STORAGE = 'tt_api_status'
+// A cached rate_limit/error older than this is ignored (see freshStatusByModel),
+// so a transient quota blip doesn't linger across turns or sessions.
+const STATUS_TTL_MS = 90_000
+type StampedStatus = { status: GeminiStatus; ts: number }
 
 type Screen = 'menu' | 'intro' | 'game'
 
@@ -22,21 +26,36 @@ function App() {
     () => localStorage.getItem(KEY_STORAGE) ?? '',
   )
   const [apiStatusByModel, setApiStatusByModel] = useState<
-    Record<string, GeminiStatus>
+    Record<string, StampedStatus>
   >(() => {
     try {
-      return JSON.parse(localStorage.getItem(STATUS_STORAGE) || '{}') || {}
+      const raw = JSON.parse(localStorage.getItem(STATUS_STORAGE) || '{}') || {}
+      const out: Record<string, StampedStatus> = {}
+      for (const [m, v] of Object.entries(raw)) {
+        // Normalize the pre-timestamp shape (a bare status string) as already
+        // stale, so an old persisted rate-limit clears on the next load.
+        if (v && typeof v === 'object' && 'status' in v)
+          out[m] = v as StampedStatus
+        else if (typeof v === 'string')
+          out[m] = { status: v as GeminiStatus, ts: 0 }
+      }
+      return out
     } catch {
       return {}
     }
   })
-  // Track Gemini health PER MODEL (not globally) so the battle banner reflects
-  // the current machine's own pool, not a stale rate-limit bled over from a
-  // different-tier machine. Persisted so the menu can warn on a fresh load.
+  // Track Gemini health PER MODEL (not globally) so the banner reflects the
+  // current machine's own pool, not a rate-limit bled over from a different tier.
+  // Each entry is timestamped so a transient rate_limit/error self-clears
+  // (freshStatusByModel) instead of lingering after the quota recovered.
   const recordApiStatus = (model: string, s: GeminiStatus) => {
     setApiStatusByModel((prev) => {
-      if (prev[model] === s) return prev
-      const next = { ...prev, [model]: s }
+      const cur = prev[model]
+      // Sticky statuses (ok/bad_key) don't expire, so skip a redundant write; a
+      // repeated rate_limit/error refreshes its timestamp to keep the clock live.
+      if (cur && cur.status === s && s !== 'rate_limit' && s !== 'error')
+        return prev
+      const next = { ...prev, [model]: { status: s, ts: Date.now() } }
       try {
         localStorage.setItem(STATUS_STORAGE, JSON.stringify(next))
       } catch {
@@ -44,6 +63,19 @@ function App() {
       }
       return next
     })
+  }
+  // A transient rate_limit/error older than the TTL reads as unknown (no banner):
+  // RPM/TPM limits clear within a minute, and a real daily cap re-flags on the
+  // next combat call (which already falls back to scripted). bad_key stays sticky
+  // until the key changes. Children keep the plain-status shape.
+  const freshStatusByModel: Record<string, GeminiStatus> = {}
+  for (const [m, { status, ts }] of Object.entries(apiStatusByModel)) {
+    if (
+      (status === 'rate_limit' || status === 'error') &&
+      Date.now() - ts > STATUS_TTL_MS
+    )
+      continue
+    freshStatusByModel[m] = status
   }
   const [screen, setScreen] = useState<Screen>('menu')
 
@@ -248,7 +280,7 @@ function App() {
           onApiKey={updateKey}
           onBegin={() => setScreen('intro')}
           record={record}
-          apiStatusByModel={apiStatusByModel}
+          apiStatusByModel={freshStatusByModel}
         />
       )}
       {screen === 'intro' && <IntroScroll onContinue={() => setScreen('game')} />}
@@ -259,7 +291,7 @@ function App() {
           apiKey={apiKey}
           onApiKey={updateKey}
           record={record}
-          apiStatusByModel={apiStatusByModel}
+          apiStatusByModel={freshStatusByModel}
         />
       )}
     </div>
