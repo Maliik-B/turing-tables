@@ -11,6 +11,9 @@ export interface EncounterDef {
   model: string | null
   // Signature moves beyond attack/block.
   abilities: IntentType[]
+  // Chance a real (Gemini) move telegraphs a feint. 0/undefined = honest tier.
+  // Rises up the ladder: the smarter the machine, the more it lies to you.
+  bluff?: number
   // Lines shown when the player hovers the enemy (its kit + what tier it runs).
   intel: string[]
   // The Mainframe: adapts to the player's behavior across prior trials.
@@ -31,7 +34,7 @@ export const RUN: EncounterDef[] = [
     model: null,
     abilities: [],
     intel: [
-      'Strikes for 8–12 (heavier when wounded)',
+      'Strikes for 9–14 (heavier when wounded)',
       'Shields for ~8',
       'Rule-based automaton — no special routines, and it never truly thinks.',
     ],
@@ -42,9 +45,9 @@ export const RUN: EncounterDef[] = [
     model: 'gemini-2.5-flash-lite',
     abilities: ['weaken'],
     intel: [
-      'Strikes for 8–14 · Shields for ~8',
+      'Strikes for 9–15 · Shields for ~8',
       'Combo: weakens you (−25%), then shields so your softened hits glance off',
-      'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted decoys.',
+      'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted. Telegraphs honestly — for now.',
     ],
     cardCount: 'none',
     passive: 'Reads your board — not your cards, yet',
@@ -54,10 +57,12 @@ export const RUN: EncounterDef[] = [
     hp: 98,
     model: 'gemini-2.5-flash',
     abilities: ['expose'],
+    bluff: 0.2,
     intel: [
-      'Strikes for 8–14 · Shields for ~8',
+      'Strikes for 9–15 · Shields for ~8',
       'Combo: exposes you (Vulnerable, +50%), then strikes the opening',
-      'Runs Gemini Flash — sharper. Its decoys are subtler.',
+      'Feints — its telegraph can be a lie. Sever forces the truth.',
+      'Runs Gemini Flash — sharper, and it has started to deceive.',
     ],
     cardCount: 'observed',
     passive: 'Reads your board · counts the cards you play',
@@ -68,9 +73,11 @@ export const RUN: EncounterDef[] = [
     model: 'gemini-3-flash-preview',
     abilities: ['expose', 'drain'],
     remembers: true,
+    bluff: 0.35,
     intel: [
-      'Strikes for 8–14 · Shields for ~8',
+      'Strikes for 9–15 · Shields for ~8',
       'Combo: exposes you, then drains the opening — big hit, heals itself',
+      'Feints often — a telegraph you trust is a telegraph it wants you to trust',
       'Resists corruption — your DoT takes hold at reduced strength',
       'Runs Gemini 3 Flash, knows your whole deck, and has studied your prior trials.',
     ],

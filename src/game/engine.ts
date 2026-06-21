@@ -1,4 +1,4 @@
-import type { Action, Card, Combatant, Enemy, GameState } from './types'
+import type { Action, Card, Combatant, Enemy, GameState, Intent } from './types'
 import { CARDS, STARTER_DECK, REWARD_POOL } from './cards'
 import { RUN, HEAL_FRACTION, type EncounterDef } from './run'
 import { decideEnemyMove, baitTaunt } from './opponent'
@@ -104,6 +104,7 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
     corruption: 0,
     intent: move.intent,
     intentSource: move.source,
+    decoyIntent: null,
     targetSeat: i % Math.max(1, seatCount),
     lastMove: null,
     revealed: null,
@@ -112,6 +113,7 @@ function makeEnemy(i: number, def: EncounterDef, seatCount: number): Enemy {
     intel: def.intel,
     remembers: !!def.remembers,
     abilities: def.abilities,
+    bluffChance: def.bluff ?? 0,
     cardCount: def.cardCount ?? 'none',
     passive: def.passive ?? '',
     taunt: move.taunt,
@@ -202,7 +204,11 @@ function clone(s: GameState): GameState {
       hand: [...p.hand],
       discard: [...p.discard],
     })),
-    enemies: s.enemies.map((e) => ({ ...e, intent: { ...e.intent } })),
+    enemies: s.enemies.map((e) => ({
+      ...e,
+      intent: { ...e.intent },
+      decoyIntent: e.decoyIntent ? { ...e.decoyIntent } : null,
+    })),
     activeSeat: s.activeSeat,
     encounter: s.encounter,
     round: s.round,
@@ -221,6 +227,18 @@ function clone(s: GameState): GameState {
 
 function logLine(s: GameState, line: string): void {
   s.log = [line, ...s.log].slice(0, 30)
+}
+
+function intentLabel(i: Intent): string {
+  return i.type === 'attack'
+    ? 'Attack'
+    : i.type === 'drain'
+      ? 'Drain'
+      : i.type === 'block'
+        ? 'Block'
+        : i.type === 'weaken'
+          ? 'Weaken'
+          : 'Expose'
 }
 
 function firstAliveEnemy(s: GameState): number {
@@ -263,6 +281,15 @@ function runEnemyPhase(s: GameState): void {
     const target = s.players[e.targetSeat] ?? s.players.find((p) => p.hp > 0)
     if (!target) continue
     const it = e.intent
+    // A feint resolves: it telegraphed decoyIntent, but `it` (the truth) fires.
+    // Reveal it so the player learns this machine lies (and scripted ones don't).
+    if (e.decoyIntent) {
+      logLine(
+        s,
+        `FEINT — ${e.name} feigned ${intentLabel(e.decoyIntent)}; real move: ${intentLabel(it)}.`,
+      )
+      e.decoyIntent = null
+    }
     if (it.type === 'attack' || it.type === 'drain') {
       const amount = modified(it.value, e.weak, target.vulnerable)
       const dealt = dealDamage(target, amount)
@@ -483,6 +510,7 @@ export function reducer(state: GameState, action: Action): GameState {
         if (e) {
           e.intent = m.intent
           e.intentSource = m.source
+          e.decoyIntent = m.decoy ?? null
           e.taunt = m.taunt
           if (m.taunt) logLine(s, `${e.name}: "${m.taunt}"`)
         }

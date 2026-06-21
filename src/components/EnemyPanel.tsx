@@ -20,7 +20,9 @@ export function EnemyPanel({
   const dead = enemy.hp <= 0
   const enraged = !dead && enemy.hp / enemy.maxHp <= 0.25
   const severedLeft = Math.max(0, enemy.severedUntilRound - round + 1)
-  const it = enemy.intent
+  // Show the feint if the machine is bluffing this turn: the player reads and
+  // responds to the false telegraph; the truth (enemy.intent) lands on its turn.
+  const it = enemy.decoyIntent ?? enemy.intent
   const shownAttack = enemy.weak > 0 ? Math.floor(it.value * 0.75) : it.value
   const intentText =
     it.type === 'attack'

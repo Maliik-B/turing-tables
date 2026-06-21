@@ -1,6 +1,6 @@
 import type { BrainContext, EnemyMove } from './opponent'
-import type { RunStats } from './types'
-import { decideEnemyMove, scriptedTaunt } from './opponent'
+import type { Intent, RunStats } from './types'
+import { decideEnemyMove, makeDecoy, scriptedTaunt } from './opponent'
 import { geminiDecideMove, type GeminiStatus } from './gemini'
 
 export type { GeminiStatus }
@@ -13,6 +13,9 @@ export interface BrainOptions {
   severed?: boolean
   // A dossier of the player's cross-trial behavior (Mainframe memory mechanic).
   memory?: string
+  // Chance a real (Gemini) move telegraphs a feint this turn. Scripted moves
+  // never feint, so an honest telegraph is itself a tell.
+  bluffChance?: number
 }
 
 // Share of turns the real Gemini brain plays when it's available (a keyed,
@@ -27,7 +30,7 @@ const CANNED_SHARE = 0.33
 export async function decideMove(
   ctx: BrainContext,
   opts: BrainOptions = {},
-): Promise<EnemyMove & { status?: GeminiStatus }> {
+): Promise<EnemyMove & { status?: GeminiStatus; decoy?: Intent }> {
   const tryGemini =
     !!opts.apiKey &&
     !!opts.model &&
@@ -50,7 +53,14 @@ export async function decideMove(
           Math.random() < CANNED_SHARE
             ? scriptedTaunt(move.intent.type)
             : move.taunt
-        return { ...move, taunt, status }
+        // A thinking machine may telegraph a feint: show a false move now, do the
+        // real one on its turn. Only Gemini moves bluff, so a trustworthy
+        // telegraph means the move was scripted.
+        const decoy =
+          opts.bluffChance && Math.random() < opts.bluffChance
+            ? makeDecoy(move.intent, ctx)
+            : undefined
+        return { ...move, taunt, decoy, status }
       }
       return { ...decideEnemyMove(ctx), status }
     } catch {
