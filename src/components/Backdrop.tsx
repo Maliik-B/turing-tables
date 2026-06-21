@@ -166,17 +166,25 @@ const HORIZON = (() => {
   const sites: Array<{ x: number; y: number; s: number; threshold: number; dur: number; wicks: Wick[] }> = []
   for (let i = 0; i < 7; i++) {
     const s = 0.85 + rnd() * 0.7
-    const n = 3 + Math.floor(rnd() * 2) // 3-4 wicks
-    const linger = Math.floor(rnd() * n) // one wick stays lit longer
-    const wicks: Wick[] = []
-    for (let k = 0; k < n; k++) {
-      wicks.push({
-        dx: (rnd() - 0.5) * 26 * s,
-        dy: (rnd() - 0.5) * 12 * s,
-        r: (6 + rnd() * 6) * s,
-        phase: 0.2 + (k / Math.max(1, n - 1)) * 0.6,
-        hw: k === linger ? 0.26 : 0.12 + rnd() * 0.05,
-      })
+    const spreadR = (26 + rnd() * 20) * s // how far the blaze engulfs outward
+    // a persistent ignition core that stays lit (the heart of the fire)
+    const wicks: Wick[] = [{ dx: 0, dy: 2 * s, r: (8 + rnd() * 4) * s, phase: 0.5, hw: 0.46 }]
+    // ...which spreads outward through rings, each igniting a little later, so
+    // the fire reads as catching and engulfing the building (RimWorld-style).
+    const rings = 2
+    for (let ring = 1; ring <= rings; ring++) {
+      const rr = (ring / rings) * spreadR
+      const count = ring + 2
+      for (let c = 0; c < count; c++) {
+        const ang = (c / count) * Math.PI * 2 + rnd() * 0.8
+        wicks.push({
+          dx: Math.cos(ang) * rr,
+          dy: Math.sin(ang) * rr * 0.5 - rr * 0.25, // biased upward (fire rises)
+          r: (5 + rnd() * 4) * s * (1 - ring * 0.14),
+          phase: 0.2 + ring * 0.24 + (rnd() - 0.5) * 0.12, // outer rings catch later
+          hw: 0.12 + rnd() * 0.06,
+        })
+      }
     }
     sites.push({
       x: 70 + (i / 7) * 1080 + (rnd() - 0.5) * 80,
