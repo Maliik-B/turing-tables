@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { MachineColossus } from './MachineColossus'
 
 // Atmospheric backdrop: a lone vigil looking out over a vast living machine-city
 // on the horizon, in fog, under a sky whose stars fade as dawn approaches. All
@@ -160,7 +161,16 @@ const HORIZON = (() => {
   return { fills, strokes, lights, beacons, far, grid }
 })()
 
-export function Backdrop({ warmth, lost }: { warmth: number; lost: boolean }) {
+export function Backdrop({
+  warmth,
+  lost,
+  tier,
+}: {
+  warmth: number
+  lost: boolean
+  // The current enemy's tier (0-3) when in a fight: looms as an Omnidroid.
+  tier?: number | null
+}) {
   const starOpacity = lost ? 0.55 : Math.max(0, 0.95 - warmth * 0.82)
   const fogTint = lost ? 'rgba(148,163,184,0.05)' : `rgba(${Math.round(160 + warmth * 70)},${Math.round(150 + warmth * 40)},${Math.round(190 - warmth * 60)},0.055)`
 
@@ -187,6 +197,9 @@ export function Backdrop({ warmth, lost }: { warmth: number; lost: boolean }) {
         @keyframes tt-fog-a { 0%{transform:translateX(-6%)} 100%{transform:translateX(6%)} }
         @keyframes tt-fog-b { 0%{transform:translateX(5%)} 100%{transform:translateX(-5%)} }
       `}</style>
+
+      {/* The machine you're facing, looming on the horizon (escalating tier). */}
+      {tier != null && <MachineColossus tier={tier} />}
 
       {/* Fading stars — high in the night sky, gone by dawn. */}
       <svg
