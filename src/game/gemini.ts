@@ -34,7 +34,7 @@ export function modelTiming(model: string | null | undefined): {
 export type GeminiStatus = 'ok' | 'rate_limit' | 'bad_key' | 'error'
 
 const BASE_SYSTEM = `You are THE MACHINE, a coldly tactical AI opponent in a one-on-one card duel against a human. Each turn you choose ONE move.
-- "attack": deal damage to the human (value 9-15).
+- "attack": deal damage to the human (value 9-13).
 - "block": shield yourself (value 8). Never block twice in a row, and never block when your HP is low — press the advantage instead.`
 
 // Calls Gemini (the given model) for the Machine's next move. Returns the move

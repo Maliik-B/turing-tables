@@ -52,8 +52,17 @@ function observations(s: RunStats): Obs[] {
   // up forced-survival block without being a turtle (this hit ~46 while playing
   // 40 attacks), so gate on block out-weighing a third of the damage dealt, with
   // a volume floor. Genuine turtling clears both; forced mitigation does not.
-  if (s.blockGained >= 40 && s.blockGained > s.damageDealt * 0.3)
-    out.push({ find: 'Banks heavy block.', sub: `defense · ${s.blockGained} raised`, ...conf(Math.floor(s.blockGained / 10), 6) })
+  // BUT heavy raw block (>=70) is the exact line where the Mainframe adapts and
+  // gains Sunder (engine.ts adaptToDossier) — so always surface it, even on a
+  // high-damage run that slips under the share gate (block 74 vs 250 damage read
+  // "balanced" with no tell, then got Sundered). The file must show what it
+  // punishes, or "adapted to your turtling" reads as a gotcha.
+  if (s.blockGained >= 70 || (s.blockGained >= 40 && s.blockGained > s.damageDealt * 0.3))
+    out.push({
+      find: s.blockGained >= 70 ? 'Turtles — banks block to outlast you.' : 'Banks heavy block.',
+      sub: `defense · ${s.blockGained} raised`,
+      ...conf(Math.floor(s.blockGained / 10), 6),
+    })
   return out.slice(0, 5)
 }
 
