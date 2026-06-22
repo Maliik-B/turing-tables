@@ -63,8 +63,8 @@ export function MenuScreen({
       />
       <p className="max-w-md leading-relaxed text-neutral-300">
         A deckbuilder against machines that may — or may not — be thinking.
-        Descend their generations on the longest day and reach the Mainframe
-        before dusk.
+        Descend their generations on the longest day, reach the Mainframe, and
+        hold the light until dawn.
       </p>
       <button
         type="button"
