@@ -312,6 +312,7 @@ function App() {
           onApiKey={updateKey}
           onBegin={() => {
             audio.unlock()
+            audio.stopMenuTheme()
             audio.startAmbient(warmth)
             setScreen('intro')
           }}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { SolsticeSun } from './SolsticeSun'
 import type { GeminiStatus } from '../game/brain'
+import * as audio from '../game/audio'
 
 export function MenuScreen({
   apiKey,
@@ -32,6 +33,19 @@ export function MenuScreen({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onBegin])
+
+  // Browser autoplay policy blocks audio until a gesture, so the generative
+  // title theme starts on the player's first interaction with the menu (a click
+  // anywhere, or a key). The game then takes over the drone when the run begins.
+  useEffect(() => {
+    const start = () => audio.startMenuTheme()
+    window.addEventListener('pointerdown', start, { once: true })
+    window.addEventListener('keydown', start, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', start)
+      window.removeEventListener('keydown', start)
+    }
+  }, [])
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">

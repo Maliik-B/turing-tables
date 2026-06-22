@@ -274,3 +274,38 @@ export function stopAmbient(): void {
   a.oscs.forEach((o) => o.stop(stopAt))
   a.lfo.stop(stopAt)
 }
+
+// ---- menu theme (generative: the drone + a slow, sparse melodic motif) ----
+// Even the title music is generated in the moment, no loop file. A self-pacing
+// scatter of soft notes from an A-minor-pentatonic set over the ambient pad.
+
+let menuTimer: ReturnType<typeof setTimeout> | null = null
+const MENU_NOTES = [220, 261.63, 293.66, 329.63, 392, 440]
+
+export function startMenuTheme(warmth = 0.3): void {
+  const c = ensureCtx()
+  if (!c) return
+  if (c.state === 'suspended') void c.resume()
+  startAmbient(warmth)
+  if (menuTimer) return
+  const tick = () => {
+    if (!muted) {
+      // a rest now and then keeps it from feeling like a sequence
+      if (Math.random() > 0.22) {
+        const f = MENU_NOTES[Math.floor(Math.random() * MENU_NOTES.length)]
+        tone({ freq: f, type: 'triangle', peak: 0.05, attack: 0.05, dur: 0.5, release: 1.3 })
+        if (Math.random() > 0.7)
+          tone({ freq: f * 1.5, type: 'sine', peak: 0.03, attack: 0.06, dur: 0.6, release: 1.5, delay: 0.14 })
+      }
+    }
+    menuTimer = setTimeout(tick, 1700 + Math.random() * 1900)
+  }
+  tick()
+}
+
+export function stopMenuTheme(): void {
+  if (menuTimer) {
+    clearTimeout(menuTimer)
+    menuTimer = null
+  }
+}

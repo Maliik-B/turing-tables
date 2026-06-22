@@ -128,10 +128,10 @@ export function EnemyPanel({
             </p>
             {feintSafe && (
               <span
-                title="A machine never feints a move that could kill you. At this HP its telegraph is the truth."
+                title="Because your HP is low, a real hit could kill you, and a machine never feints a move that could finish you. So while you're this hurt its telegraph is the truth, not a bluff. Read it safely."
                 className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300"
               >
-                ✓ no feint · telegraph is true
+                ✓ no feint while you're low
               </span>
             )}
             {enemy.vulnerable > 0 && (

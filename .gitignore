@@ -12,8 +12,18 @@ dist
 dist-ssr
 *.local
 
-# Local-only design/working notes
+# Secrets — never commit API keys or env files
+.env
+.env.*
+
+# Local-only design / working notes + scratch (never committed)
 DESIGN.md
+DEV_WRITEUP.md
+DEV_VIDEO.md
+mockups.html
+playtest-helper*.js
+tt-*.jpeg
+tt-*.png
 
 # Editor directories and files
 .vscode/*
