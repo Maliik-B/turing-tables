@@ -1,6 +1,7 @@
-import { useEffect, useState, type Dispatch } from 'react'
+import { useEffect, useRef, useState, type Dispatch } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import type { Action, GameState } from '../game/types'
+import type { Action, Card, GameState } from '../game/types'
+import * as audio from '../game/audio'
 import type { GeminiStatus } from '../game/brain'
 import { RUN, modelLabel } from '../game/run'
 import { EnemyPanel } from './EnemyPanel'
@@ -50,6 +51,14 @@ function logClass(line: string): string {
   if (/Trial|halts|Dawn|long dark|awakens|Sever|learn to/.test(line))
     return 'text-amber-200/55' // narration
   return 'text-neutral-500'
+}
+
+// Pick the sound a card makes from its primary effect: a hit, a guard, or a
+// soft tick for utility cards.
+function cardSfx(card: Card): 'attack' | 'block' | 'card' {
+  if (card.damage) return 'attack'
+  if (card.block || card.retain) return 'block'
+  return 'card'
 }
 
 export function BattleScreen({
@@ -152,6 +161,7 @@ export function BattleScreen({
       if (e.key >= '1' && e.key <= '9') {
         const card = me.hand[Number(e.key) - 1]
         if (card && card.cost <= me.energy) {
+          audio.play(cardSfx(card))
           dispatch({ type: 'PLAY_CARD', seat: activeSeat, uid: card.uid })
         }
         return
@@ -170,6 +180,7 @@ export function BattleScreen({
         !targetSevered &&
         aliveEnemy >= 0
       ) {
+        audio.play('scan')
         dispatch({ type: 'ACCUSE', enemy: aliveEnemy })
       }
     }
@@ -193,6 +204,27 @@ export function BattleScreen({
     activeSeat,
     dispatch,
   ])
+
+  // Sound the verdict of a Call Imitation the moment the reducer resolves it.
+  const prevReads = useRef({ caught: reads.caught, wrong: reads.falseAccusations })
+  useEffect(() => {
+    if (reads.caught > prevReads.current.caught) audio.play('correct')
+    else if (reads.falseAccusations > prevReads.current.wrong) audio.play('wrong')
+    prevReads.current = { caught: reads.caught, wrong: reads.falseAccusations }
+  }, [reads.caught, reads.falseAccusations])
+
+  // A soft chime when a trial clears (once per cleared screen).
+  const clearedChimed = useRef(false)
+  useEffect(() => {
+    if (phase === 'cleared') {
+      if (!clearedChimed.current) {
+        clearedChimed.current = true
+        audio.play('reward')
+      }
+    } else {
+      clearedChimed.current = false
+    }
+  }, [phase])
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-5">
@@ -343,13 +375,14 @@ export function BattleScreen({
                         !awaitingIntents &&
                         card.cost <= me.energy
                       }
-                      onClick={() =>
+                      onClick={() => {
+                        audio.play(cardSfx(card))
                         dispatch({
                           type: 'PLAY_CARD',
                           seat: activeSeat,
                           uid: card.uid,
                         })
-                      }
+                      }}
                     />
                   </motion.div>
                 ))}
@@ -387,9 +420,10 @@ export function BattleScreen({
                       apiStatus === 'rate_limit' ||
                       aliveEnemy < 0
                     }
-                    onClick={() =>
+                    onClick={() => {
+                      audio.play('scan')
                       dispatch({ type: 'ACCUSE', enemy: aliveEnemy })
-                    }
+                    }}
                     className="rounded-lg border border-fuchsia-500/50 bg-fuchsia-500/10 px-4 py-2 font-semibold text-fuchsia-300 hover:bg-fuchsia-500/20 disabled:opacity-40"
                   >
                     Call Imitation

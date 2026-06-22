@@ -7,6 +7,7 @@ import { BattleScreen } from './components/BattleScreen'
 import { MenuScreen } from './components/MenuScreen'
 import { IntroScroll } from './components/IntroScroll'
 import { Backdrop } from './components/Backdrop'
+import * as audio from './game/audio'
 
 const KEY_STORAGE = 'tt_gemini_key'
 const RECORD_STORAGE = 'tt_record'
@@ -78,6 +79,13 @@ function App() {
     freshStatusByModel[m] = status
   }
   const [screen, setScreen] = useState<Screen>('menu')
+  const [muted, setMuted] = useState(() => audio.isMuted())
+  const toggleMute = () => {
+    const next = !muted
+    audio.unlock()
+    audio.setMuted(next)
+    setMuted(next)
+  }
 
   const updateKey = (k: string) => {
     setApiKey(k)
@@ -108,6 +116,13 @@ function App() {
     if (state.phase === 'won' || state.phase === 'lost') {
       if (recordedRef.current) return
       recordedRef.current = true
+      if (state.phase === 'won') {
+        audio.setAmbientWarmth(1)
+        audio.play('win')
+      } else {
+        audio.play('lose')
+        audio.stopAmbient()
+      }
       setRecord((r) => {
         const next = {
           wins: r.wins + (state.phase === 'won' ? 1 : 0),
@@ -236,8 +251,23 @@ function App() {
   const dawnAlpha = lost ? 0.1 : 0.38 + warmth * 0.5
   const nightAlpha = lost ? 0.92 : 0.6 - warmth * 0.42 // night recedes toward dawn
 
+  // The drone tracks the same dawn-as-an-arc warmth: it brightens + lifts in
+  // pitch as the run climbs toward the Mainframe.
+  useEffect(() => {
+    audio.setAmbientWarmth(warmth)
+  }, [warmth])
+
   return (
     <div className="min-h-screen text-neutral-100">
+      <button
+        type="button"
+        onClick={toggleMute}
+        title={muted ? 'Sound off — click for sound' : 'Sound on — click to mute'}
+        aria-label={muted ? 'Unmute sound' : 'Mute sound'}
+        className="fixed right-3 top-3 z-50 rounded border border-neutral-700/70 bg-neutral-950/40 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400 backdrop-blur transition-colors hover:border-amber-500/50 hover:text-amber-300"
+      >
+        {muted ? '♪ off' : '♪ on'}
+      </button>
       {/* Cool night sky — deepest at Trial 1 and on a loss; recedes toward dawn. */}
       <div
         aria-hidden
@@ -280,7 +310,11 @@ function App() {
         <MenuScreen
           apiKey={apiKey}
           onApiKey={updateKey}
-          onBegin={() => setScreen('intro')}
+          onBegin={() => {
+            audio.unlock()
+            audio.startAmbient(warmth)
+            setScreen('intro')
+          }}
           record={record}
           apiStatusByModel={freshStatusByModel}
         />
