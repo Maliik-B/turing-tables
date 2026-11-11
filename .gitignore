@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 
-# Secrets — never commit API keys or env files
+# Secrets: never commit API keys or env files
 .env
 .env.*
 

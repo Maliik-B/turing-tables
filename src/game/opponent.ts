@@ -44,7 +44,7 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
   },
   expose: {
     value: 3,
-    gemini: '"expose": apply Vulnerable for 3 turns so the human takes 50% more damage — then strike into it.',
+    gemini: '"expose": apply Vulnerable for 3 turns so the human takes 50% more damage, then strike into it.',
   },
   drain: {
     value: 10,
@@ -52,14 +52,14 @@ export const ABILITY_INFO: Record<string, { value: number; gemini: string }> = {
   },
   sunder: {
     value: 12,
-    gemini: '"sunder": strip ALL of the human\'s block, then deal 12 — use it the moment they hide behind block.',
+    gemini: '"sunder": strip ALL of the human\'s block, then deal 12. Use it the moment they hide behind block.',
   },
 }
 
 // Build a feint: a FALSE intent to telegraph while the real move resolves. A
 // dangerous real move (attack/drain) shows something harmless so the human
 // doesn't brace; a defensive/setup real move shows an attack so they waste a
-// guard. Only thinking (Gemini) machines feint — see decideMove.
+// guard. Only thinking (Gemini) machines feint (see decideMove).
 const HARMLESS: IntentType[] = ['block', 'weaken', 'expose']
 export function makeDecoy(real: Intent, ctx: BrainContext): Intent {
   if (real.type === 'attack' || real.type === 'drain' || real.type === 'sunder') {
@@ -73,15 +73,15 @@ export function makeDecoy(real: Intent, ctx: BrainContext): Intent {
   return { type: 'attack', value: 9 + Math.floor(Math.random() * 5) }
 }
 
-// The scripted ("imitation") opponent brain — the free, offline fallback and
+// The scripted ("imitation") opponent brain: the free, offline fallback and
 // the "imitation" half of the Turing-test guess-check. It plays COHERENTLY: it
 // sets up a debuff and cashes it in the next turn (the same two-move combos the
 // Gemini brain runs), so a combo never reveals which brain is acting. What it
-// canNOT do is read the human's board — it never reacts to your block, your
+// canNOT do is read the human's board: it never reacts to your block, your
 // power-up, or your HP. That obliviousness is the real tell to hunt.
 //   - never shields twice in a row; never shields while enraged (low HP)
 //   - hits harder when enraged
-// Canned lines for the scripted brain — deliberately a little flat and
+// Canned lines for the scripted brain, deliberately a little flat and
 // repetitive (the "imitation" tell): a player who watches long enough learns to
 // spot the loop, while Gemini's lines stay context-aware and fresh.
 const SCRIPTED_TAUNTS: Record<string, string[]> = {
@@ -140,7 +140,7 @@ function decideCore(ctx: BrainContext): EnemyMove {
   const has = (a: IntentType) => ctx.abilities.includes(a)
   const attack = (): EnemyMove => {
     // If this machine has adapted Sunder (a turtling player), some of its swings
-    // come through as Sunder — the scripted brain throws it blindly (harmless if
+    // come through as Sunder. The scripted brain throws it blindly (harmless if
     // you hold no block), Gemini saves it for when you actually turtle.
     if (has('sunder') && Math.random() < 0.4) {
       return {
@@ -155,7 +155,7 @@ function decideCore(ctx: BrainContext): EnemyMove {
     }
   }
 
-  // PAYOFF — cash in a setup from last turn.
+  // PAYOFF: cash in a setup from last turn.
   if (ctx.lastMove === 'expose') {
     // The human is Vulnerable; hit the opening. Drain it if we can (Mainframe).
     if (has('drain')) {
@@ -167,11 +167,11 @@ function decideCore(ctx: BrainContext): EnemyMove {
     return attack()
   }
   if (ctx.lastMove === 'weaken' && !enraged) {
-    // We softened their attacks — turtle so the weakened hits glance off.
+    // We softened their attacks; turtle so the weakened hits glance off.
     return { intent: { type: 'block', value: 8 }, source: 'scripted' }
   }
 
-  // SETUP — open a combo with a signature debuff (prefer expose/weaken).
+  // SETUP: open a combo with a signature debuff (prefer expose/weaken).
   if (
     ctx.abilities.length > 0 &&
     !enraged &&

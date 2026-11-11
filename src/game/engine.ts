@@ -146,7 +146,7 @@ function reconcileSever(p: Combatant, hasKey: boolean, pastEliza: boolean): void
 function adaptToDossier(enemy: Enemy, stats: RunStats): void {
   if (!enemy.remembers) return
   // Only genuine turtling: a skill-dominant deck, or heavy block reliance across
-  // the run. (40 was too low — a balanced player who blocks a little hit it.)
+  // the run. (40 was too low: a balanced player who blocks a little hit it.)
   const turtles = stats.skills > stats.attacks * 1.2 || stats.blockGained >= 70
   if (turtles && !enemy.abilities.includes('sunder')) {
     enemy.abilities = [...enemy.abilities, 'sunder']
@@ -331,7 +331,7 @@ function runEnemyPhase(s: GameState): void {
         logLine(s, `${e.name} attacks ${target.name} for ${amount}.`)
       }
     } else if (it.type === 'sunder') {
-      // Wipe the guard first, so the strike lands on raw HP — turtling fails.
+      // Wipe the guard first, so the strike lands on raw HP and turtling fails.
       const stripped = target.block
       target.block = 0
       const amount = modified(it.value, e.weak, target.vulnerable)
@@ -615,7 +615,7 @@ export function reducer(state: GameState, action: Action): GameState {
         if (p.hp <= 0) continue
         p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * HEAL_FRACTION))
       }
-      // Clearing ELIZA (gen-0) is where Sever starts to matter — the real Gemini
+      // Clearing ELIZA (gen-0) is where Sever starts to matter: the real Gemini
       // machines begin next. It only joins the deck with a key live (useless
       // against a scripted machine); a key added later restores it via
       // reconcileSever at the next trial setup.

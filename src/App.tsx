@@ -268,7 +268,7 @@ function App() {
       >
         {muted ? '♪ off' : '♪ on'}
       </button>
-      {/* Cool night sky — deepest at Trial 1 and on a loss; recedes toward dawn. */}
+      {/* Cool night sky: deepest at Trial 1 and on a loss; recedes toward dawn. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-20 transition-opacity duration-1000"
@@ -278,7 +278,7 @@ function App() {
           opacity: nightAlpha,
         }}
       />
-      {/* Warm dawn horizon — rises in height + warmth with the run; gold on a win,
+      {/* Warm dawn horizon: rises in height + warmth with the run; gold on a win,
           a cold blue smear on a loss. */}
       <div
         aria-hidden

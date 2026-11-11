@@ -45,7 +45,7 @@ export function EnemyPanel({
       : it.type === 'block'
         ? 'text-sky-300'
         : 'text-amber-300'
-  // Spell out what each telegraphed move actually does — especially that
+  // Spell out what each telegraphed move actually does, especially that
   // weaken/expose deal no damage, and that blocking a drain denies its heal.
   const intentTitle =
     it.type === 'attack'

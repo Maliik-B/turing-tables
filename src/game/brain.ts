@@ -80,7 +80,7 @@ export async function decideMove(
 }
 
 // Turn the run-long behavior tally into a short natural-language dossier for
-// the Mainframe's prompt — this is what makes the final boss "remember" you.
+// the Mainframe's prompt. This is what makes the final boss "remember" you.
 export function buildDossier(s: RunStats): string {
   const lean =
     s.attacks > s.skills * 1.2

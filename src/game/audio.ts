@@ -1,5 +1,5 @@
 // Procedural audio: a warming solstice drone + synthesized SFX. Zero asset
-// files (the same ethos as the all-CSS/SVG visuals) — every sound is generated
+// files (the same ethos as the all-CSS/SVG visuals): every sound is generated
 // at play time from oscillators and filtered noise. A single AudioContext, a
 // master gain for the mute toggle, and one continuous ambient pad whose pitch
 // and brightness rise with the run (the audio twin of the dawn-as-an-arc
@@ -186,14 +186,14 @@ export function play(name: SfxName): void {
       tone({ freq: 990, type: 'square', peak: 0.07, dur: 0.06, release: 0.05, delay: 0.09 })
       break
     case 'correct': {
-      // a rising major arpeggio — the read paid off
+      // a rising major arpeggio: the read paid off
       ;[523, 659, 784, 1047].forEach((f, i) =>
         tone({ freq: f, type: 'triangle', peak: 0.15, dur: 0.07, release: 0.12, delay: i * 0.07 }),
       )
       break
     }
     case 'wrong':
-      // a dissonant, beating descent — the machine was thinking
+      // a dissonant, beating descent: the machine was thinking
       tone({ freq: 150, glideTo: 90, type: 'sawtooth', peak: 0.11, dur: 0.3, release: 0.22 })
       tone({ freq: 159, glideTo: 96, type: 'sawtooth', peak: 0.09, dur: 0.3, release: 0.22 })
       break

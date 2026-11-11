@@ -5,7 +5,7 @@ import { MachineColossus } from './MachineColossus'
 // on the horizon, in fog, under a sky whose stars fade as dawn approaches. All
 // CSS/SVG, fixed behind the UI. `warmth` runs 0 (deep night) -> 1 (full dawn).
 
-// Deterministic star field — seeded so positions never jump between renders.
+// Deterministic star field, seeded so positions never jump between renders.
 const STARS = (() => {
   let s = 1337
   const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296)
@@ -255,7 +255,7 @@ export function Backdrop({
       {/* The machine you're facing, looming on the horizon (escalating tier). */}
       {tier != null && <MachineColossus tier={tier} distant={distant} />}
 
-      {/* Fading stars — high in the night sky, gone by dawn. */}
+      {/* Fading stars: high in the night sky, gone by dawn. */}
       <svg
         className="absolute inset-x-0 top-0 transition-opacity duration-1000"
         style={{ height: '64vh', opacity: starOpacity, zIndex: -19 }}
@@ -266,7 +266,7 @@ export function Backdrop({
         {stars}
       </svg>
 
-      {/* Living machine-city horizon — distinct machine archetypes over a faint
+      {/* Living machine-city horizon: distinct machine archetypes over a faint
           receding grid, lit windows + blinking beacons, hazing into fog and set
           against the warm dawn glow behind. */}
       <svg
@@ -315,7 +315,7 @@ export function Backdrop({
             />
           </circle>
         ))}
-        {/* fog fade — dissolve the bases into haze */}
+        {/* fog fade: dissolve the bases into haze */}
         <rect x="0" y="120" width="1200" height="200" fill="url(#tt-fog-grad)" />
         {/* burning ruins (progressive): oval wicks igniting + dying in a
             staggered loop so the fire starts, spreads, and lingers. Only sites

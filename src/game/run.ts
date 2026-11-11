@@ -1,7 +1,7 @@
 import type { IntentType } from './types'
 
 // The model ladder: four trials of escalating machine intelligence. Each is a
-// "generation" — gen-0 is a rule-based automaton (scripted only, an ELIZA-era
+// "generation": gen-0 is a rule-based automaton (scripted only, an ELIZA-era
 // imitation), and each step up runs a more capable Gemini model and gains a
 // signature ability. The guess-check only matters from gen-1 on.
 export interface EncounterDef {

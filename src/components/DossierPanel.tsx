@@ -53,7 +53,7 @@ function observations(s: RunStats): Obs[] {
   // 40 attacks), so gate on block out-weighing a third of the damage dealt, with
   // a volume floor. Genuine turtling clears both; forced mitigation does not.
   // BUT heavy raw block (>=70) is the exact line where the Mainframe adapts and
-  // gains Sunder (engine.ts adaptToDossier) — so always surface it, even on a
+  // gains Sunder (engine.ts adaptToDossier), so always surface it, even on a
   // high-damage run that slips under the share gate (block 74 vs 250 damage read
   // "balanced" with no tell, then got Sundered). The file must show what it
   // punishes, or "adapted to your turtling" reads as a gotcha.
@@ -91,7 +91,7 @@ export function DossierPanel({
   total,
 }: {
   stats: RunStats
-  // The current enemy remembers — i.e. this is the Mainframe.
+  // The current enemy remembers, i.e. this is the Mainframe.
   active: boolean
   trial?: number
   total?: number
@@ -119,7 +119,7 @@ export function DossierPanel({
         active ? 'border-red-500/50 bg-red-500/5' : 'border-neutral-800/70 bg-neutral-900/40'
       }`}
     >
-      {/* faint astrolabe watermark — the analyst's instrument */}
+      {/* faint astrolabe watermark: the analyst's instrument */}
       <svg
         aria-hidden
         className="pointer-events-none absolute -right-6 -top-8 opacity-[0.07]"

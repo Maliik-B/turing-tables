@@ -20,7 +20,7 @@ export interface CardDef {
   retain?: number
   // "Recur": returns to the player's hand when they correctly Call an Imitation.
   recur?: boolean
-  // "Resummon": returns to hand right after being played — a repeatable,
+  // "Resummon": returns to hand right after being played, a repeatable,
   // energy-gated attack you can chain.
   resummon?: boolean
   // This attack heals the player for half the damage it lands (scales).
@@ -63,7 +63,7 @@ export interface Intent {
 
 // How a machine's current move was chosen. Drives the Turing-test guess-check:
 // once Gemini is wired (Day 3), some moves are 'gemini' (real) and some stay
-// 'scripted' (the imitation) — the player guesses which.
+// 'scripted' (the imitation), and the player guesses which.
 export type MoveSource = 'scripted' | 'gemini'
 
 // A player seat. Array-based so the same combat scales 1v1 -> 4v4 (co-op).
@@ -77,7 +77,7 @@ export interface Combatant {
   block: number
   // Block carried into the start of the next turn (from "retain" cards).
   retainBlock: number
-  // If true, this turn's leftover block is kept (not reset) next turn — a
+  // If true, this turn's leftover block is kept (not reset) next turn, a
   // lingering defense that stacks toward a ramp (Firewall).
   keepBlock: boolean
   vulnerable: number
@@ -135,11 +135,11 @@ export interface Enemy {
   // Player-facing Gemini passive label (shown only when a key is active).
   passive: string
   // The machine's line for its telegraphed move (Gemini-written or scripted
-  // canned) — its "voice", and a subtle read tell (aware vs canned).
+  // canned): its "voice", and a subtle read tell (aware vs canned).
   taunt?: string
 }
 
-// Running tally of how the player has fought across the whole run — fed to the
+// Running tally of how the player has fought across the whole run, fed to the
 // Mainframe's Gemini prompt so the final boss adapts to them.
 export interface RunStats {
   cardsPlayed: Record<string, number>

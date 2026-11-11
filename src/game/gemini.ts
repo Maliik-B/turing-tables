@@ -35,7 +35,7 @@ export type GeminiStatus = 'ok' | 'rate_limit' | 'bad_key' | 'error'
 
 const BASE_SYSTEM = `You are THE MACHINE, a coldly tactical AI opponent in a one-on-one card duel against a human. Each turn you choose ONE move.
 - "attack": deal damage to the human (value 9-13).
-- "block": shield yourself (value 8). Never block twice in a row, and never block when your HP is low — press the advantage instead.`
+- "block": shield yourself (value 8). Never block twice in a row, and never block when your HP is low; press the advantage instead.`
 
 // Calls Gemini (the given model) for the Machine's next move. Returns the move
 // plus a status the UI can surface (rate_limit / bad_key) so a keyed player
@@ -61,10 +61,10 @@ export async function geminiDecideMove(
       (abilityDescs.length
         ? '\nYour signature abilities:\n- ' +
           abilityDescs.join('\n- ') +
-          '\nCombo them: set up a debuff (Vulnerable/Weak), then cash it in next turn — a heavy attack into Vulnerable, or a drain.'
+          '\nCombo them: set up a debuff (Vulnerable/Weak), then cash it in next turn: a heavy attack into Vulnerable, or a drain.'
         : '') +
       "\nRead the human's board and react: don't sink a big hit into a wall of block, press for the kill when they're low, and brace when they're powered up to strike." +
-      '\nPlay to win. Be unpredictable but coherent — a human should sense a mind behind the moves.'
+      '\nPlay to win. Be unpredictable but coherent; a human should sense a mind behind the moves.'
 
     const lines = [
       `Your HP is ${Math.round(ctx.hpRatio * 100)}% of maximum.`,
@@ -88,13 +88,13 @@ export async function geminiDecideMove(
         lines.push(
           `You know the human's entire deck: ${ctx.deck.cards.join(', ')}. ${
             ctx.deck.unplayed ?? 0
-          } cards remain unplayed. Reason about what they can still draw — but you do NOT see their hand or draw order.`,
+          } cards remain unplayed. Reason about what they can still draw, but you do NOT see their hand or draw order.`,
         )
       } else {
         lines.push(
           `Cards you have watched the human play this fight: ${
             ctx.deck.cards.length ? ctx.deck.cards.join(', ') : 'none yet'
-          }. Infer their deck and what they still hold — you do NOT see their hand.`,
+          }. Infer their deck and what they still hold; you do NOT see their hand.`,
         )
       }
     }
@@ -157,7 +157,7 @@ export async function geminiDecideMove(
       value = Number(parsed.value)
       value = Number.isFinite(value) ? Math.max(5, Math.min(12, Math.round(value))) : 8
     } else {
-      // signature ability — use its fixed value
+      // signature ability: use its fixed value
       value = ABILITY_INFO[act]?.value ?? 2
     }
 
