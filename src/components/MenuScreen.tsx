@@ -76,7 +76,7 @@ export function MenuScreen({
         className="-mt-1 h-px w-64 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"
       />
       <p className="max-w-md leading-relaxed text-neutral-300">
-        A deckbuilder against machines that may — or may not — be thinking.
+        A deckbuilder against machines that may, or may not, be thinking.
         Descend their generations on the longest day, reach the Mainframe, and
         hold the light until dawn.
       </p>

@@ -409,7 +409,7 @@ export function BattleScreen({
                     type="button"
                     title={
                       apiStatus === 'rate_limit'
-                        ? 'This machine hit its free quota and is running the scripted imitation — there is no real mind to catch right now.'
+                        ? 'This machine hit its free quota and is running the scripted imitation: there is no real mind to catch right now.'
                         : "Accuse the Machine's telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: -4 HP."
                     }
                     disabled={
@@ -490,7 +490,7 @@ export function BattleScreen({
               From here, you must sever the link.
             </h2>
             <p className="max-w-md text-sm leading-relaxed text-neutral-400">
-              ELIZA was a dead-end husk — no link to the grid, nothing to cut.
+              ELIZA was a dead-end husk: no link to the grid, nothing to cut.
               The machines after are wired into the central network. Sever drops
               one to blind, scripted routines for two turns. You'll want it.
             </p>
@@ -538,7 +538,7 @@ export function BattleScreen({
               onClick={() => dispatch({ type: 'CHOOSE_REWARD', uid: null })}
               className="mt-1 text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-300"
             >
-              Skip — take no card
+              Skip (take no card)
             </button>
           </motion.div>
         )}

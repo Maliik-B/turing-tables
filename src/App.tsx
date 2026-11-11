@@ -262,7 +262,7 @@ function App() {
       <button
         type="button"
         onClick={toggleMute}
-        title={muted ? 'Sound off — click for sound' : 'Sound on — click to mute'}
+        title={muted ? 'Sound off. Click for sound.' : 'Sound on. Click to mute.'}
         aria-label={muted ? 'Unmute sound' : 'Mute sound'}
         className="fixed right-3 top-3 z-50 rounded border border-neutral-700/70 bg-neutral-950/40 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400 backdrop-blur transition-colors hover:border-amber-500/50 hover:text-amber-300"
       >

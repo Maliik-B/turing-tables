@@ -6,7 +6,7 @@ export function PlayerPanel({ player }: { player: Combatant }) {
     <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
       <div className="mb-2 flex items-center justify-between">
         <span
-          title="Your board — your HP, block, and buffs. The machines' passive reads this."
+          title="Your board: your HP, block, and buffs. The machines' passive reads this."
           className="font-mono text-xs uppercase tracking-[0.2em] text-emerald-400"
         >
           Your board

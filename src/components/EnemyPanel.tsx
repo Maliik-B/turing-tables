@@ -53,12 +53,12 @@ export function EnemyPanel({
       : it.type === 'drain'
         ? 'Damages you and heals itself for half the damage dealt. Block the hit to deny the heal.'
         : it.type === 'sunder'
-          ? 'Strips ALL your block, then strikes. Blocking will not stop it — hit back or out-pace it.'
+          ? 'Strips ALL your block, then strikes. Blocking will not stop it. Hit back or out-pace it.'
           : it.type === 'block'
             ? 'Shields itself. Its block clears the moment it next acts.'
           : it.type === 'weaken'
-            ? 'Applies Weak (you deal -25%) — no damage this turn.'
-            : 'Applies Vulnerable (you take +50%) — no damage this turn.'
+            ? 'Applies Weak (you deal -25%). No damage this turn.'
+            : 'Applies Vulnerable (you take +50%). No damage this turn.'
   // The brain never feints a move that could kill (real hit x1.5 >= your HP),
   // so at low HP a bluffer's telegraph is trustworthy. Surface that so the
   // player knows when the read is safe. ~24 covers the worst feintable hit.

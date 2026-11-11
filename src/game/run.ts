@@ -36,7 +36,7 @@ export const RUN: EncounterDef[] = [
     intel: [
       'Strikes for 9–14 (heavier when wounded)',
       'Shields for ~8',
-      'Rule-based automaton — no special routines, and it never truly thinks.',
+      'Rule-based automaton: no special routines, and it never truly thinks.',
     ],
   },
   {
@@ -47,10 +47,10 @@ export const RUN: EncounterDef[] = [
     intel: [
       'Strikes for 9–15 · Shields for ~8',
       'Combo: weakens you (−25%), then shields so your softened hits glance off',
-      'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted. Telegraphs honestly — for now.',
+      'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted. Telegraphs honestly, for now.',
     ],
     cardCount: 'none',
-    passive: 'Reads your board — not your cards, yet',
+    passive: 'Reads your board (not your cards, yet)',
   },
   {
     name: 'ORACLE-2',
@@ -61,8 +61,8 @@ export const RUN: EncounterDef[] = [
     intel: [
       'Strikes for 9–15 · Shields for ~8',
       'Combo: exposes you (Vulnerable, +50%), then strikes the opening',
-      'Feints — its telegraph can be a lie. Sever forces the truth.',
-      'Runs Gemini Flash — sharper, and it has started to deceive.',
+      'Feints: its telegraph can be a lie. Sever forces the truth.',
+      'Runs Gemini Flash: sharper, and it has started to deceive.',
     ],
     cardCount: 'observed',
     passive: 'Reads your board · counts your cards · feints its telegraph',
@@ -76,9 +76,9 @@ export const RUN: EncounterDef[] = [
     bluff: 0.35,
     intel: [
       'Strikes for 9–15 · Shields for ~8',
-      'Combo: exposes you, then drains the opening — big hit, heals itself',
-      'Feints often — a telegraph you trust is a telegraph it wants you to trust',
-      'Resists corruption — your DoT takes hold at reduced strength',
+      'Combo: exposes you, then drains the opening (big hit, heals itself)',
+      'Feints often: a telegraph you trust is a telegraph it wants you to trust',
+      'Resists corruption: your DoT takes hold at reduced strength',
       'Runs Gemini 3 Flash, knows your whole deck, and has studied your prior trials.',
     ],
     cardCount: 'full',

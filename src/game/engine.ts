@@ -152,7 +152,7 @@ function adaptToDossier(enemy: Enemy, stats: RunStats): void {
     enemy.abilities = [...enemy.abilities, 'sunder']
     enemy.intel = [
       ...enemy.intel,
-      'ADAPTED to your turtling: Sunder strips your block, then strikes — vary your play.',
+      'ADAPTED to your turtling: Sunder strips your block, then strikes. Vary your play.',
     ]
   }
 }
@@ -199,7 +199,7 @@ export function createInitialState(hasKey = false): GameState {
     encounter: 0,
     round: 1,
     phase: 'player',
-    log: ['The longest day. The Machine is weakest now — strike.'],
+    log: ['The longest day. The Machine is weakest now. Strike.'],
     awaitingIntents: true,
     calledThisRound: false,
     reads: { caught: 0, falseAccusations: 0 },
@@ -315,7 +315,7 @@ function runEnemyPhase(s: GameState): void {
     if (e.decoyIntent) {
       logLine(
         s,
-        `FEINT — ${e.name} feigned ${intentLabel(e.decoyIntent)}; real move: ${intentLabel(it)}.`,
+        `FEINT: ${e.name} feigned ${intentLabel(e.decoyIntent)}; real move: ${intentLabel(it)}.`,
       )
       e.decoyIntent = null
     }
@@ -501,7 +501,7 @@ export function reducer(state: GameState, action: Action): GameState {
 
       logLine(
         s,
-        `${p.name} plays ${card.name}${fx.length ? ' — ' + fx.join(', ') : ''}.`,
+        `${p.name} ${p.name === 'You' ? 'play' : 'plays'} ${card.name}${fx.length ? ': ' + fx.join(', ') : ''}.`,
       )
       // Track the player's behavior across the run for the Mainframe's memory.
       s.runStats.cardsPlayed[card.name] =
@@ -576,7 +576,7 @@ export function reducer(state: GameState, action: Action): GameState {
       if (e.intentSource === 'scripted') {
         s.reads.caught += 1
         me.energy += 1
-        logLine(s, 'Imitation exposed — the Machine was faking. +1 energy.')
+        logLine(s, 'Imitation exposed: the Machine was faking. +1 energy.')
         const returned = me.discard.filter((c) => c.recur)
         if (returned.length > 0) {
           me.discard = me.discard.filter((c) => !c.recur)
@@ -589,7 +589,7 @@ export function reducer(state: GameState, action: Action): GameState {
       } else {
         s.reads.falseAccusations += 1
         dealDamage(me, 4)
-        logLine(s, 'Wrong — that was the Machine thinking. -4 HP.')
+        logLine(s, 'Wrong: that was the Machine thinking. -4 HP.')
         logLine(s, `${e.name}: "${baitTaunt(e.remembers)}"`)
         if (s.players.every((pl) => pl.hp <= 0)) {
           s.players.forEach((pl) => (pl.hp = Math.max(0, pl.hp)))

@@ -23,10 +23,10 @@ function observations(s: RunStats): Obs[] {
   const out: Obs[] = []
   const style =
     s.attacks > s.skills * 1.2
-      ? 'Opens aggressive — leans on attacks.'
+      ? 'Opens aggressive: leans on attacks.'
       : s.skills > s.attacks * 1.2
-        ? 'Plays defensive — leans on block and skills.'
-        : 'Balanced — mixes attack and defense.'
+        ? 'Plays defensive: leans on block and skills.'
+        : 'Balanced: mixes attack and defense.'
   out.push({ find: style, sub: `pattern · ${s.attacks} attacks / ${s.skills} skills`, ...conf(total, 18) })
   // Surface the most-played NON-basic card: "Favors Defend" (3 starter copies)
   // is noise; "Favors Leech / Corrupt" is an actual tell. Fall back to the
@@ -36,7 +36,7 @@ function observations(s: RunStats): Obs[] {
   const top = sorted.find(([name]) => !BASICS.has(name)) ?? sorted[0]
   if (top)
     out.push({
-      find: `Favors ${top[0]} — ${top[1]} plays.`,
+      find: `Favors ${top[0]} (${top[1]} plays).`,
       sub: `tell · ${Math.round((top[1] / total) * 100)}% of cards`,
       ...conf(top[1], 8),
     })
@@ -44,7 +44,7 @@ function observations(s: RunStats): Obs[] {
     out.push({ find: 'Reaches for Sever to cut the link.', sub: `tactic · ${s.severs} severed`, ...conf(s.severs, 3) })
   if (s.accuses > 0)
     out.push({
-      find: `Hunts the imitation — ${s.accuses} call${s.accuses > 1 ? 's' : ''}.`,
+      find: `Hunts the imitation (${s.accuses} call${s.accuses > 1 ? 's' : ''}).`,
       sub: 'interrogation · profiling your reads',
       ...conf(s.accuses, 4),
     })
@@ -59,7 +59,7 @@ function observations(s: RunStats): Obs[] {
   // punishes, or "adapted to your turtling" reads as a gotcha.
   if (s.blockGained >= 70 || (s.blockGained >= 40 && s.blockGained > s.damageDealt * 0.3))
     out.push({
-      find: s.blockGained >= 70 ? 'Turtles — banks block to outlast you.' : 'Banks heavy block.',
+      find: s.blockGained >= 70 ? 'Turtles: banks block to outlast you.' : 'Banks heavy block.',
       sub: `defense · ${s.blockGained} raised`,
       ...conf(Math.floor(s.blockGained / 10), 6),
     })
@@ -108,7 +108,7 @@ export function DossierPanel({
   const dataPoints = stats.attacks + stats.skills + stats.severs + stats.accuses
   const variance =
     dataPoints === 0
-      ? '—'
+      ? 'N/A'
       : stats.attacks > stats.skills * 1.5 || stats.skills > stats.attacks * 1.5
         ? 'LOW · predictable'
         : 'MODERATE'
