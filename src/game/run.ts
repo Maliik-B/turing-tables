@@ -34,7 +34,7 @@ export const RUN: EncounterDef[] = [
     model: null,
     abilities: [],
     intel: [
-      'Strikes for 9–14 (heavier when wounded)',
+      'Strikes for 9–13 (heavier when wounded)',
       'Shields for ~8',
       'Rule-based automaton: no special routines, and it never truly thinks.',
     ],
@@ -45,7 +45,7 @@ export const RUN: EncounterDef[] = [
     model: 'gemini-2.5-flash-lite',
     abilities: ['weaken'],
     intel: [
-      'Strikes for 9–15 · Shields for ~8',
+      'Strikes for 9–13 · Shields for ~8',
       'Combo: weakens you (−25%), then shields so your softened hits glance off',
       'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted. Telegraphs honestly, for now.',
     ],
@@ -59,7 +59,7 @@ export const RUN: EncounterDef[] = [
     abilities: ['expose'],
     bluff: 0.2,
     intel: [
-      'Strikes for 9–15 · Shields for ~8',
+      'Strikes for 9–13 · Shields for ~8',
       'Combo: exposes you (Vulnerable, +50%), then strikes the opening',
       'Feints: its telegraph can be a lie. Sever forces the truth.',
       'Runs Gemini Flash: sharper, and it has started to deceive.',
@@ -75,7 +75,7 @@ export const RUN: EncounterDef[] = [
     remembers: true,
     bluff: 0.35,
     intel: [
-      'Strikes for 9–15 · Shields for ~8',
+      'Strikes for 9–13 · Shields for ~8',
       'Combo: exposes you, then drains the opening (big hit, heals itself)',
       'Feints often: a telegraph you trust is a telegraph it wants you to trust',
       'Resists corruption: your DoT takes hold at reduced strength',
