@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import type { Action, Card, GameState } from '../game/types'
 import * as audio from '../game/audio'
 import type { GeminiStatus } from '../game/brain'
-import { RUN, modelLabel } from '../game/run'
+import { RUN } from '../game/run'
+import { BRAINS, brainStatus } from '../game/gemini'
 import { EnemyPanel } from './EnemyPanel'
 import { PlayerPanel } from './PlayerPanel'
 import { CardView } from './CardView'
@@ -97,8 +98,29 @@ export function BattleScreen({
   const aliveEnemy = enemies.findIndex((e) => e.hp > 0)
   const cur = aliveEnemy >= 0 ? enemies[aliveEnemy] : undefined
   const curIsGemini = !!apiKey && !!cur?.model
-  // This machine's own Gemini health (per-model), for the rate-limit banner.
+  // The key's verdict for this machine (only 'bad_key' drives a banner now).
   const apiStatus = cur?.model ? (apiStatusByModel[cur.model] ?? null) : null
+  // Which model this machine will think with right now, from the readiness
+  // table: its first choice, a fallback, or none until a model comes back. A
+  // one-second tick keeps the "back in" countdown honest while one runs.
+  const [now, setNow] = useState(() => Date.now())
+  const chain = curIsGemini ? BRAINS[RUN[encounter]?.brain ?? ''] : undefined
+  const brain = chain ? brainStatus(chain, now) : null
+  const noBrain = !!brain && !brain.spec
+  useEffect(() => {
+    if (!chain) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [chain])
+  const backIn = brain?.backAt ? Math.max(0, Math.ceil((brain.backAt - now) / 1000)) : 0
+  const clock = `${Math.floor(backIn / 60)}:${String(backIn % 60).padStart(2, '0')}`
+  const machineLabel = !curIsGemini
+    ? 'Scripted'
+    : brain?.spec
+      ? `${brain.spec.label}${brain.fallback ? ' · fallback' : ''}`
+      : brain?.why === 'day'
+        ? "Scripted · today's free calls spent"
+        : `Scripted · Gemini back in ${clock}`
   const targetSevered = !!cur && cur.severedUntilRound >= round
 
   const [severIntroSeen, setSeverIntroSeen] = useState(false)
@@ -175,7 +197,7 @@ export function BattleScreen({
       } else if (
         k === 'c' &&
         curIsGemini &&
-        apiStatus !== 'rate_limit' &&
+        !noBrain &&
         !calledThisRound &&
         !targetSevered &&
         aliveEnemy >= 0
@@ -196,7 +218,7 @@ export function BattleScreen({
     showDeck,
     rewardChoices,
     curIsGemini,
-    apiStatus,
+    noBrain,
     apiKey,
     calledThisRound,
     targetSevered,
@@ -253,12 +275,12 @@ export function BattleScreen({
       <div className="flex items-center gap-2 text-xs">
         <span
           className={`rounded px-2 py-0.5 font-mono ${
-            curIsGemini
+            curIsGemini && !noBrain
               ? 'bg-emerald-500/15 text-emerald-300'
               : 'bg-neutral-800 text-neutral-400'
           }`}
         >
-          Machine: {curIsGemini ? modelLabel(cur?.model) : 'Scripted'}
+          Machine: {machineLabel}
         </span>
         <input
           type="password"
@@ -293,12 +315,21 @@ export function BattleScreen({
           </button>
         </div>
       )}
-      {curIsGemini && apiStatus === 'rate_limit' && (
+      {noBrain && (
         <div className="-mt-2 rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 font-mono text-[11px] leading-snug text-amber-200/90">
-          ⚠ {cur?.name} ({modelLabel(cur?.model)}) has hit its free Gemini quota.
-          It runs the scripted imitation until that model's quota resets (midnight
-          Pacific, ~3 AM ET) or you upgrade. Machines on other models still think.
-          The run plays on.
+          {brain?.why === 'day' ? (
+            <>
+              ⚠ Every model {cur?.name} can use has spent its free Gemini calls
+              for today. It plays the scripted imitation until they reset at
+              midnight Pacific (~3 AM ET). The run plays on.
+            </>
+          ) : (
+            <>
+              ⚠ Google is busy or pacing this key right now, so {cur?.name} plays
+              the scripted imitation for a moment. Its Gemini mind is back in{' '}
+              {clock}.
+            </>
+          )}
         </div>
       )}
       {curIsGemini && apiStatus === 'bad_key' && (
@@ -408,8 +439,8 @@ export function BattleScreen({
                   <button
                     type="button"
                     title={
-                      apiStatus === 'rate_limit'
-                        ? 'This machine hit its free quota and is running the scripted imitation: there is no real mind to catch right now.'
+                      noBrain
+                        ? 'No Gemini model is ready for this machine, so it is running the scripted imitation: there is no real mind to catch right now.'
                         : "Accuse the Machine's telegraphed move of being a scripted imitation. Right: +1 energy. Wrong: -4 HP."
                     }
                     disabled={
@@ -417,7 +448,7 @@ export function BattleScreen({
                       awaitingIntents ||
                       calledThisRound ||
                       targetSevered ||
-                      apiStatus === 'rate_limit' ||
+                      noBrain ||
                       aliveEnemy < 0
                     }
                     onClick={() => {

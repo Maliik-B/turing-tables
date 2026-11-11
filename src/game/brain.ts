@@ -1,14 +1,17 @@
 import type { BrainContext, EnemyMove } from './opponent'
 import type { Intent, RunStats } from './types'
 import { decideEnemyMove, makeDecoy, scriptedTaunt } from './opponent'
-import { geminiDecideMove, type GeminiStatus } from './gemini'
+import { geminiDecideMove, readyAt, type BrainSpec, type GeminiStatus } from './gemini'
 
 export type { GeminiStatus }
 
 export interface BrainOptions {
   apiKey?: string | null
-  // The Gemini model id for this enemy; null/undefined = scripted only (gen-0).
-  model?: string | null
+  // This round's Gemini model (chosen by pickBrain), and the rest of the
+  // machine's chain to try if it fails. null/undefined = scripted only (gen-0,
+  // keyless, or every model in the chain is spent).
+  spec?: BrainSpec | null
+  chain?: BrainSpec[]
   // The "Sever" card forces the scripted brain for a few turns.
   severed?: boolean
   // A dossier of the player's cross-trial behavior (Mainframe memory mechanic).
@@ -33,17 +36,12 @@ export async function decideMove(
 ): Promise<EnemyMove & { status?: GeminiStatus; decoy?: Intent }> {
   const tryGemini =
     !!opts.apiKey &&
-    !!opts.model &&
+    !!opts.spec &&
     !opts.severed &&
     Math.random() < GEMINI_SHARE
   if (tryGemini) {
     try {
-      const { move, status } = await geminiDecideMove(
-        ctx,
-        opts.apiKey as string,
-        opts.model as string,
-        opts.memory,
-      )
+      const { move, status } = await askChain(ctx, opts)
       // Carry the API status onto the move (or onto the scripted fallback when
       // Gemini failed) so the UI can flag a rate-limited or rejected key.
       if (move) {
@@ -77,6 +75,28 @@ export async function decideMove(
     }
   }
   return decideEnemyMove(ctx)
+}
+
+// Ask this round's model; if it fails for a reason that clears on its own
+// (busy, a spent quota, a model this key can't use), try the next model in the
+// chain that is ready right now, within what is left of the first one's time.
+// One fallback per round keeps a turn from stalling on a bad Google day.
+async function askChain(
+  ctx: BrainContext,
+  opts: BrainOptions,
+): ReturnType<typeof geminiDecideMove> {
+  const spec = opts.spec as BrainSpec
+  const key = opts.apiKey as string
+  const t0 = Date.now()
+  const first = await geminiDecideMove(ctx, key, spec, opts.memory)
+  if (first.move || first.status === 'bad_key') return first
+  const left = spec.timeoutMs - (Date.now() - t0)
+  const chain = opts.chain ?? []
+  const next = chain
+    .slice(chain.indexOf(spec) + 1)
+    .find((s) => s.model !== spec.model && readyAt(s) <= Date.now())
+  if (!next || left < 1500) return first
+  return geminiDecideMove(ctx, key, next, opts.memory, Math.min(left, next.timeoutMs))
 }
 
 // Turn the run-long behavior tally into a short natural-language dossier for

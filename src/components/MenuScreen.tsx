@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { SolsticeSun } from './SolsticeSun'
 import type { GeminiStatus } from '../game/brain'
+import { spentToday } from '../game/gemini'
 import * as audio from '../game/audio'
 
 export function MenuScreen({
@@ -18,13 +19,10 @@ export function MenuScreen({
   apiStatusByModel: Record<string, GeminiStatus>
 }) {
   const [showKeyHelp, setShowKeyHelp] = useState(false)
-  // Worst-case summary across the key's models for the menu warning.
-  const vals = Object.values(apiStatusByModel)
-  const apiStatus: GeminiStatus | null = vals.includes('bad_key')
-    ? 'bad_key'
-    : vals.includes('rate_limit')
-      ? 'rate_limit'
-      : null
+  // The key's verdict, and which models have spent today's free calls (from
+  // the readiness table, which persists across reloads until midnight Pacific).
+  const badKey = Object.values(apiStatusByModel).includes('bad_key')
+  const spent = apiKey ? spentToday() : []
   // Enter begins the run (keyboard-first play).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -104,14 +102,7 @@ export function MenuScreen({
           placeholder="paste a free Google AI Studio key to face the real machine"
           className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-300 placeholder:text-neutral-600 focus:border-amber-500/50 focus:outline-none"
         />
-        {apiStatus === 'rate_limit' ? (
-          <p className="mt-1.5 text-left text-[11px] leading-snug text-amber-400/90">
-            ⚠ This key recently hit its Gemini quota. It may still be maxed until
-            your free limit resets (midnight Pacific, ~3 AM ET), or upgrade your
-            Google AI plan for more. You can still play; the machines fall back
-            to their scripted imitation.
-          </p>
-        ) : apiStatus === 'bad_key' ? (
+        {badKey ? (
           <p className="mt-1.5 text-left text-[11px] leading-snug text-red-400/90">
             ⚠ This key was rejected last time. Double-check it at
             aistudio.google.com/apikey and paste it again.
@@ -120,6 +111,13 @@ export function MenuScreen({
           <p className="mt-1.5 text-left text-[11px] leading-snug text-emerald-400/80">
             ✓ Key active. ELIZA-0 is scripted by design; the real Gemini machine
             wakes at DAEMON-1, then sharpens each trial up to the Mainframe.
+            {spent.length > 0 && (
+              <span className="mt-1 block text-amber-400/90">
+                Today's free calls are spent on {spent.join(', ')}. Machines that
+                use {spent.length > 1 ? 'them' : 'it'} switch to their fallback
+                models until midnight Pacific.
+              </span>
+            )}
           </p>
         ) : (
           <p className="mt-1.5 text-left text-[11px] leading-snug text-neutral-600">
@@ -184,10 +182,14 @@ export function MenuScreen({
               no backend.
             </p>
             <p className="mt-1.5 text-[11px] leading-snug text-neutral-600">
-              A free key easily covers a full session. The daily free-tier
-              limit resets midnight Pacific and is high enough that you are
-              unlikely to reach it in normal play. If a machine ever runs dry,
-              it drops to its scripted imitation and the run plays on.
+              A full run makes about 18 Gemini calls. Google's free tier allows
+              20 a day on most models, so a free key gives you about one or two
+              runs a day against each machine's first-choice model. After that,
+              ORACLE-2 and the Mainframe move to Gemini 3.8 Flash for another run
+              or so, and then every machine thinks on Gemini 3.1 Flash-Lite,
+              which allows 500 calls a day. The limits reset at midnight
+              Pacific. Only when every model is spent does a machine fall back
+              to its scripted imitation, and the run plays on.
             </p>
           </div>
         )}

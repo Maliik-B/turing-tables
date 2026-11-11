@@ -2,7 +2,8 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import { createInitialState, reducer } from './game/engine'
 import { decideMove, buildDossier } from './game/brain'
 import type { GeminiStatus } from './game/brain'
-import { modelTiming } from './game/gemini'
+import { BRAINS, pickBrain, resetReadiness } from './game/gemini'
+import { RUN } from './game/run'
 import { BattleScreen } from './components/BattleScreen'
 import { MenuScreen } from './components/MenuScreen'
 import { IntroScroll } from './components/IntroScroll'
@@ -89,8 +90,10 @@ function App() {
 
   const updateKey = (k: string) => {
     setApiKey(k)
-    // A changed key invalidates any prior rate-limit / bad-key warnings.
+    // A changed key invalidates any prior rate-limit / bad-key warnings, and
+    // its quotas are its own, so the readiness table starts fresh too.
     setApiStatusByModel({})
+    resetReadiness()
     try {
       localStorage.removeItem(STATUS_STORAGE)
     } catch {
@@ -163,15 +166,24 @@ function App() {
     if (decidedIntentKey.current === key) return
     decidedIntentKey.current = key
     const alive = state.enemies.filter((e) => e.hp > 0)
-    // Mask the "thinking" pause to the current machine's tier so scripted turns
-    // match that model's real cadence (and the boss gets a longer beat). ELIZA
-    // (no model) and keyless play stay near-instant.
-    const first = alive[0]
-    const tm = apiKey && first?.model ? modelTiming(first.model) : null
+    // Pick this round's model from the machine's chain: the first one that is
+    // ready, or will be within a few seconds. If it needs a few seconds (our
+    // own per-minute spacer, or a short wait Google asked for), the round holds
+    // in "thinking" until then. That hold happens before the 70/30 coin flip,
+    // so a scripted round waits exactly as a live one would and timing still
+    // gives nothing away. Then mask the "thinking" pause to that model's real
+    // cadence (the boss gets a longer beat). ELIZA (no model) and keyless play
+    // stay near-instant.
+    const chain = apiKey ? BRAINS[RUN[state.encounter]?.brain ?? ''] : undefined
+    const pick = chain ? pickBrain(chain) : null
+    const tm = pick?.spec ?? null
+    const spacerMs = pick?.waitMs ?? 0
     const minThink = tm
       ? tm.thinkMin + Math.floor(Math.random() * (tm.thinkMax - tm.thinkMin))
       : 150
     void (async () => {
+      if (spacerMs > 0) await new Promise((r) => setTimeout(r, spacerMs))
+      if (decidedIntentKey.current !== key) return
       const [intents] = await Promise.all([
         Promise.all(
           alive.map((e) => {
@@ -205,7 +217,8 @@ function App() {
               },
               {
                 apiKey: apiKey || null,
-                model: e.model,
+                spec: e.model ? pick?.spec : null,
+                chain,
                 severed: e.severedUntilRound >= state.round,
                 memory: e.remembers
                   ? buildDossier(state.runStats)
@@ -220,12 +233,12 @@ function App() {
       // Apply only if this is still the current round; a later round resets the
       // key, so a stale in-flight decision is dropped instead of dispatched.
       if (decidedIntentKey.current === key) {
-        // Record each machine's API health against ITS model, so the battle
-        // banner reflects the current enemy's pool rather than a stale
-        // rate-limit carried over from a different-tier machine.
+        // Keep the key's verdict per machine: 'ok' clears a stale warning and
+        // 'bad_key' sticks until the key changes. Quota and busy states live in
+        // gemini.ts's readiness table, which knows when each model comes back.
         alive.forEach((e, i) => {
           const st = intents[i]?.status
-          if (st && e.model) recordApiStatus(e.model, st)
+          if ((st === 'ok' || st === 'bad_key') && e.model) recordApiStatus(e.model, st)
         })
         dispatch({ type: 'SET_INTENTS', intents })
       }

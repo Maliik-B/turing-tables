@@ -7,8 +7,10 @@ import type { IntentType } from './types'
 export interface EncounterDef {
   name: string
   hp: number
-  // null = scripted brain only (generation 0). Otherwise the Gemini model id.
+  // null = scripted brain only (generation 0). Otherwise the Gemini model id
+  // this machine prefers; `brain` names its full chain in gemini.ts BRAINS.
   model: string | null
+  brain?: string
   // Signature moves beyond attack/block.
   abilities: IntentType[]
   // Chance a real (Gemini) move telegraphs a feint. 0/undefined = honest tier.
@@ -43,11 +45,12 @@ export const RUN: EncounterDef[] = [
     name: 'DAEMON-1',
     hp: 88,
     model: 'gemini-2.5-flash-lite',
+    brain: 'daemon',
     abilities: ['weaken'],
     intel: [
       'Strikes for 9–13 · Shields for ~8',
       'Combo: weakens you (−25%), then shields so your softened hits glance off',
-      'Runs Gemini Flash-Lite ~70% of turns; the rest are scripted. Telegraphs honestly, for now.',
+      'Runs Gemini 2.5 Flash-Lite ~70% of turns; the rest are scripted. Telegraphs honestly, for now.',
     ],
     cardCount: 'none',
     passive: 'Reads your board (not your cards, yet)',
@@ -55,14 +58,15 @@ export const RUN: EncounterDef[] = [
   {
     name: 'ORACLE-2',
     hp: 98,
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.6-flash',
+    brain: 'oracle',
     abilities: ['expose'],
     bluff: 0.2,
     intel: [
       'Strikes for 9–13 · Shields for ~8',
       'Combo: exposes you (Vulnerable, +50%), then strikes the opening',
       'Feints: its telegraph can be a lie. Sever forces the truth.',
-      'Runs Gemini Flash: sharper, and it has started to deceive.',
+      'Runs Gemini 3.6 Flash: sharper, and it has started to deceive.',
     ],
     cardCount: 'observed',
     passive: 'Reads your board · counts your cards · feints its telegraph',
@@ -70,7 +74,8 @@ export const RUN: EncounterDef[] = [
   {
     name: 'THE MAINFRAME',
     hp: 135,
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.6-flash',
+    brain: 'mainframe',
     abilities: ['expose', 'drain'],
     remembers: true,
     bluff: 0.35,
@@ -79,7 +84,7 @@ export const RUN: EncounterDef[] = [
       'Combo: exposes you, then drains the opening (big hit, heals itself)',
       'Feints often: a telegraph you trust is a telegraph it wants you to trust',
       'Resists corruption: your DoT takes hold at reduced strength',
-      'Runs Gemini 3 Flash, knows your whole deck, and has studied your prior trials.',
+      'Runs Gemini 3.6 Flash with thinking on, knows your whole deck, and has studied your prior trials.',
     ],
     cardCount: 'full',
     passive: 'Reads your board · knows your deck · feints often',
@@ -88,21 +93,3 @@ export const RUN: EncounterDef[] = [
 
 // Fraction of max HP recovered between trials.
 export const HEAL_FRACTION = 0.3
-
-// Friendly display name for a model id, shown on the "Machine:" chip so a judge
-// who never reaches Trial 4 still sees the escalating Flash-Lite -> Flash ->
-// Gemini 3 ladder. Falls back to a generic label for any unmapped id.
-export function modelLabel(model: string | null | undefined): string {
-  switch (model) {
-    case 'gemini-2.5-flash-lite':
-      return 'Gemini 2.5 Flash-Lite'
-    case 'gemini-2.5-flash':
-      return 'Gemini 2.5 Flash'
-    case 'gemini-3-flash-preview':
-      return 'Gemini 3 Flash'
-    case 'gemini-2.5-pro':
-      return 'Gemini 2.5 Pro'
-    default:
-      return 'Gemini'
-  }
-}
