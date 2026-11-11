@@ -520,11 +520,15 @@ export function reducer(state: GameState, action: Action): GameState {
       else if (!card.exhaust) p.discard.push(card)
 
       // Killing the enemy wins the fight even if self-damage also dropped you;
-      // otherwise, self-damage (Overload Core) can be lethal.
-      if (
-        !resolveIfCleared(s, s.enemies[ti]?.name) &&
-        s.players.every((pl) => pl.hp <= 0)
-      ) {
+      // otherwise, self-damage (Overload Core) can be lethal. A winner left at 0
+      // or below hangs on at 1 HP, because the heal and the next trial's setup
+      // skip any player at 0, which would start them dead with no hand.
+      if (resolveIfCleared(s, s.enemies[ti]?.name)) {
+        if (p.hp <= 0) {
+          p.hp = 1
+          logLine(s, 'You hang on at 1 HP.')
+        }
+      } else if (s.players.every((pl) => pl.hp <= 0)) {
         s.players.forEach((pl) => (pl.hp = Math.max(0, pl.hp)))
         s.phase = 'lost'
         logLine(s, 'The long dark takes you.')
